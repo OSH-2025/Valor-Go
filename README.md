@@ -1,4 +1,4 @@
-<h1 align="center">Hi 👋, We are team2_temp (暂时没队伍名称)</h1>
+<h1 align="center">Hi 👋, We are team Valor-Go! </h1>
 <h3 align="center">OSH2025 @USTC</h3>
 
 <p align="left"> <img src="https://komarev.com/ghpvc/?username=osh-2025&label=Profile%20views&color=0e75b6&style=flat" alt="osh-2025" /> </p>
