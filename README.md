@@ -1,7 +1,12 @@
 <h1 align="center">Hi 👋, We are team Valor-Go! </h1>
 <h3 align="center">OSH2025 @USTC</h3>
 
-<p align="left"> <img src="https://komarev.com/ghpvc/?username=osh-2025&label=Profile%20views&color=0e75b6&style=flat" alt="osh-2025" /> </p>
+<p align="center">
+<a href="./README_CN.md"><img src="https://img.shields.io/badge/文档-中文版-blue.svg" alt="CN doc"></a>
+<a href="./README.md"><img src="https://img.shields.io/badge/document-English-blue.svg" alt="EN doc"></a>
+<img src="https://komarev.com/ghpvc/?username=osh-2025&label=Profile%20views&color=0e75b6&style=flat" alt="osh-2025" />
+</p>
+
 
 ## Team Members
 + [Zucan Lv (吕祖灿)](https://github.com/zucanlv)
