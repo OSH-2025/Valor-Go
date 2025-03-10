@@ -1,10 +1,14 @@
 <h1 align="center">你好呀 👋, 我们是 Valor-Go 团队! </h1>
-<h3 align="center">OSH2025 @USTC</h3>
+<h3 align="center">OSH-2025 @USTC</h3>
 
 <p align="center">
 <a href="./README_CN.md"><img src="https://img.shields.io/badge/文档-中文版-blue.svg" alt="CN doc"></a>
 <a href="./README.md"><img src="https://img.shields.io/badge/document-English-blue.svg" alt="EN doc"></a>
 <img src="https://komarev.com/ghpvc/?username=osh-2025&label=Profile%20views&color=0e75b6&style=flat" alt="osh-2025" />
+</p>
+
+<p align="center">
+<img src="./pictures/team_logo.jpg" alt="Team logo" width="350">
 </p>
 
 
