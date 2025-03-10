@@ -8,7 +8,7 @@
 </p>
 
 
-## Team Members
+## 团队成员
 + [Zucan Lv (吕祖灿)](https://github.com/zucanlv)
 + [Xiuning Liang (梁修宁)](https://github.com/rzx0420)
 + [Qihui Wang (王淇辉)](https://github.com/discrete-create)
