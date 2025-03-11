@@ -20,10 +20,10 @@
 
 
 <h3 align="left">Connect with us:</h3>
-<p align="left">Qihui Wang: 1215542966@qq.com</p>
-<p align="left">Zhuangzhuang Ren: 2879325288@qq.com</p>
-<p align="left">Yilin Yang: 3065206814@qq.com</p>
-<p align="left">Xiuning Liang: 2959690845@qq.com</p>
+<p align="left">Qihui Wang: PB23111637@mail.ustc.edu.cn</p>
+<p align="left">Zhuangzhuang Ren: rzz18856919896@mail.ustc.edu.cn</p>
+<p align="left">Yilin Yang: yangyiln@mail.ustc.edu.cn</p>
+<p align="left">Xiuning Liang: rzx0420@mail.ustc.edu.cn</p>
 <p align="left">Zucan Lv: zucanlv@mail.ustc.edu.cn</p>
 
 
