@@ -18,6 +18,14 @@
 + [Yilin Yang (杨奕麟)](https://github.com/Alexyang1097)
 + [Zhuangzhuang Ren (任壮壮)](https://github.com/Renzz-ustc)
 
+## Project Progress
+
+| Project Phase        | Date                  | Project Progress                                                                                                                                                                                                 | Work Assignments                                                                                                                             |
+|----------------------|-----------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
+| Preliminary Research | 2025.03.07 - 2025.03.11 | First team meeting held on March 7th. Potential research directions were discussed based on course content and previous project topics. After initial deliberation on feasible directions, each member was assigned to investigate specific areas. | Zucan Lv: Investigate Rust refactoring/development<br>Zhuangzhuang Ren: Investigate Ray<br>Yilin Yang: Investigate 3FS<br>Xiuning Liang: Investigate eBPF<br>Qihui Wang: Investigate xv6 |
+| Preliminary Research | 2025.03.12 - 2025.03.18 | Second team meeting convened on March 12th. Following Prof.Xing's feedback on proposed directions, the team decided to divide into two subgroups for further investigation.                                           | Zucan & Qihui: Study xv6 refactoring using Rust<br>Yilin, Xiuning & Zhuangzhuang: Study 3FS innovation                                                                 |
+| In-depth Research    | 2025.03.19 - Present   | Third team meeting conducted on March 19th. After comprehensive discussion of research findings, the team finalized 3FS-related topics as the project focus and initiated intensive investigation                | All members:<br>- Study Rust fundamentals and prerequisite knowledge of 3FS<br>- Implement 3FS on local machines<br>- Investigate evaluation tools<br>- Conduct source code analysis through divided responsibilities |
+
 
 <h3 align="left">Connect with us:</h3>
 <p align="left">Qihui Wang: PB23111637@mail.ustc.edu.cn</p>
