@@ -26,7 +26,7 @@
 | Preliminary Research | 2025.03.12 - 2025.03.18 | Second team meeting convened on March 12th. Following Prof.Xing's feedback on proposed directions, the team decided to divide into two subgroups for further investigation.                                           | Zucan & Qihui: Study xv6 refactoring using Rust<br>Yilin, Xiuning & Zhuangzhuang: Study 3FS innovation                                                                 |
 | In-depth Research    | 2025.03.19 - 2025.03.27   | Third team meeting conducted on March 19th. After comprehensive discussion of research findings, the team finalized 3FS-related topics as the project focus and initiated intensive investigation                | All members:<br>- Study Rust fundamentals and prerequisite knowledge of 3FS<br>- Implement 3FS on local machines<br>- Investigate evaluation tools<br>- Conduct source code analysis through divided responsibilities |
 | In-depth Research | 2025.03.28 - 2025.04.06 | Fourth team meeting conducted on March 28th. After one-week in-depth investigation in 3FS background and source code, we reach a consensus on upgrading the FUSE module in 3FS with RUST and XFUSE.| All members:<br>- Dive into FUSE <br>- Make an investigation report together <br>- Make a feasibility report after investigation report
-| Code Task| 2025.04.06 - Present| To be done | To be Done|
+| Code Task| 2025.04.06 - Present| Fifth team meeting conducted on April 7th. Finished two reports, we decided to put our hands on coding, to understand the real source code of 3FS and to refactor FUSE module with Rust. | All members:<br>- Improve two reports <br>- Learn mixed compilation of Rust and C <br>- Understand 'usrconfig' file|
 
 
 <h3 align="left">Connect with us:</h3>
