@@ -29,7 +29,8 @@
 | Code Task| 2025.04.06 - 2025.04.11| Fifth team meeting conducted on April 7th. Finished two reports, we decided to put our hands on coding, to understand the real source code of 3FS and to refactor FUSE module with Rust. | All members:<br>- Improve two reports <br>- Learn mixed compilation of Rust and C <br>- Understand 'usrconfig' file|
 | Code Task| 2025.04.11 - 2025.04.14| Sixth team meeting conducted on April 11th. We discussed the progress about code understanding in recent days, and planned to furthur understand the `usrconfig` code while put our hands on refactoring the code with Rust.| All members: <br>- Read 3FS code <br>- Refactor `usrconfig.h`, `usrconfig.cc`|
 | Interim Report| 2025.04.14 - 2025.04.20| Seventh team meeting conducted on April 14th. We discussed about the assignment about interim report, and everyone was appointed to accomplish one part. | Yilin: accomplish What <br> Xiuning: accomplish Why <br> Zhuangzhuang: accomplish How <br> Qihui: accomplish progress <br> Zucan: plan the report and integrate four parts|
-| Interim Report| 2025.04.20 - present| Eighth team meeting conducted on April 20th. We discussed about the question raised by Prof. Xing and tried to solve it. | Yilin: revise part `What` <br> Zucan: delete some contents to prepare to present|
+| Interim Report| 2025.04.20 - 2025.04.23| Eighth team meeting conducted on April 20th. We discussed about the question raised by Prof. Xing and tried to solve it. | Yilin: revise part `What` <br> Zucan: delete some contents to prepare to present|
+| Code Task| 2025.04.23 - Present| Ninth team meeting conducted on Apirl 23th. Beceuse everyone in our team will have 2 or more mid-term exams, we decide not to assign specific task to individuals. We will try to dive into reading 3FS source code in spare time.| NONE|
 
 <h3 align="left">Connect with us:</h3>
 <p align="left">Qihui Wang: PB23111637@mail.ustc.edu.cn</p>
