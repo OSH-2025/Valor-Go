@@ -1,0 +1,1 @@
+/home/renzz/Desktop/Valor-Go/doc/lxn/test/target/release/librust_fuse.so: /home/renzz/Desktop/Valor-Go/doc/lxn/test/build.rs /home/renzz/Desktop/Valor-Go/doc/lxn/test/src/ffi.rs /home/renzz/Desktop/Valor-Go/doc/lxn/test/src/fuse_app_config.rs /home/renzz/Desktop/Valor-Go/doc/lxn/test/src/lib.rs
