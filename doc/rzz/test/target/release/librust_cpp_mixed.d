@@ -1,0 +1,1 @@
+/home/renzz/Desktop/Valor-Go/doc/rzz/test/target/release/librust_cpp_mixed.a: /home/renzz/Desktop/Valor-Go/doc/rzz/test/build.rs /home/renzz/Desktop/Valor-Go/doc/rzz/test/src/ffi.rs /home/renzz/Desktop/Valor-Go/doc/rzz/test/src/fuse_config_fetcher.rs /home/renzz/Desktop/Valor-Go/doc/rzz/test/src/lib.rs /home/renzz/Desktop/Valor-Go/doc/rzz/test/src/mgmtd_client.rs

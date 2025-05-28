@@ -1,10 +1,9 @@
 use crate::fuse_config_fetcher::FuseConfigFetcher;
 use std::ffi::CString;
 use std::os::raw::c_char;
-use std::ptr;
 
 #[no_mangle]
-pub extern "C" fn complete_app_info(app_info: *mut c_char) -> *mut c_char {
+pub extern "C" fn complete_app_info(_app_info: *mut c_char) -> *mut c_char {
     let fetcher = FuseConfigFetcher;
     let mut app_info_builder = flatbuffers::FlatBufferBuilder::new();
 

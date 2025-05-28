@@ -1,0 +1,25 @@
+CMAKE_TOOLCHAIN_FILE_x86_64-unknown-linux-gnu = None
+CMAKE_TOOLCHAIN_FILE_x86_64_unknown_linux_gnu = None
+HOST_CMAKE_TOOLCHAIN_FILE = None
+CMAKE_TOOLCHAIN_FILE = None
+CMAKE_GENERATOR_x86_64-unknown-linux-gnu = None
+CMAKE_GENERATOR_x86_64_unknown_linux_gnu = None
+HOST_CMAKE_GENERATOR = None
+CMAKE_GENERATOR = None
+CMAKE_PREFIX_PATH_x86_64-unknown-linux-gnu = None
+CMAKE_PREFIX_PATH_x86_64_unknown_linux_gnu = None
+HOST_CMAKE_PREFIX_PATH = None
+CMAKE_PREFIX_PATH = None
+CMAKE_x86_64-unknown-linux-gnu = None
+CMAKE_x86_64_unknown_linux_gnu = None
+HOST_CMAKE = None
+CMAKE = None
+running: cd "/home/renzz/Desktop/Valor-Go/doc/rzz/test/target/release/build/rust_cpp_mixed-f667431d658c2edf/out/build" && CMAKE_PREFIX_PATH="" LC_ALL="C" "cmake" "/home/renzz/Desktop/Valor-Go/doc/rzz/test/cpp" "-DCMAKE_INSTALL_PREFIX=/home/renzz/Desktop/Valor-Go/doc/rzz/test/target/release/build/rust_cpp_mixed-f667431d658c2edf/out" "-DCMAKE_C_FLAGS= -ffunction-sections -fdata-sections -fPIC -m64" "-DCMAKE_C_COMPILER=/usr/bin/cc" "-DCMAKE_CXX_FLAGS= -ffunction-sections -fdata-sections -fPIC -m64" "-DCMAKE_CXX_COMPILER=/usr/bin/c++" "-DCMAKE_ASM_FLAGS= -ffunction-sections -fdata-sections -fPIC -m64" "-DCMAKE_ASM_COMPILER=/usr/bin/cc" "-DCMAKE_BUILD_TYPE=Release"
+-- Configuring done (0.0s)
+-- Generating done (0.0s)
+-- Build files have been written to: /home/renzz/Desktop/Valor-Go/doc/rzz/test/target/release/build/rust_cpp_mixed-f667431d658c2edf/out/build
+running: cd "/home/renzz/Desktop/Valor-Go/doc/rzz/test/target/release/build/rust_cpp_mixed-f667431d658c2edf/out/build" && LC_ALL="C" MAKEFLAGS="-j --jobserver-fds=8,9 --jobserver-auth=8,9" "cmake" "--build" "/home/renzz/Desktop/Valor-Go/doc/rzz/test/target/release/build/rust_cpp_mixed-f667431d658c2edf/out/build" "--target" "cpp_mixed" "--config" "Release"
+[100%] Built target cpp_mixed
+cargo:root=/home/renzz/Desktop/Valor-Go/doc/rzz/test/target/release/build/rust_cpp_mixed-f667431d658c2edf/out
+cargo:rustc-link-search=native=target/release/deps
+cargo:rustc-link-lib=static=cpp_mixed

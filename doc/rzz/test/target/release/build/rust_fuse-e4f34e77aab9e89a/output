@@ -1,2 +1,0 @@
-cargo:rerun-if-changed=src/fuse_app_config.rs
-cargo:rerun-if-changed=src/ffi.rs

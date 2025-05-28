@@ -1,2 +1,0 @@
-cargo:rustc-link-search=native=cpp/build
-cargo:rustc-link-lib=static=cpp_mixed

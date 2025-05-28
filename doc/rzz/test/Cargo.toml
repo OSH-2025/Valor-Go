@@ -6,3 +6,13 @@ edition = "2021"
 [dependencies]
 tokio = { version = "1", features = ["full"] }
 futures = "0.3"
+flatbuffers = "23.5.26"
+hostname = "0.3"
+
+[build-dependencies]
+cc = "1.0"
+cmake = "0.1"
+
+[lib]
+name = "rust_cpp_mixed"
+crate-type = ["cdylib", "staticlib"]
