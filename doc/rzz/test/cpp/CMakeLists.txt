@@ -1,9 +1,6 @@
-//添加
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.10)
 project(rust_cpp_mixed)
 
-add_subdirectory(rust_fuse)  # 假设你把 Rust 项目作为子模块或外部库
-
-add_executable(main main.cpp)
-target_include_directories(main PRIVATE ../include)
-target_link_libraries(main PRIVATE rust_fuse)
+add_executable(rust_cpp_mixed main.cpp)
+target_include_directories(rust_cpp_mixed PRIVATE ${CMAKE_SOURCE_DIR}/include)
+target_link_libraries(rust_cpp_mixed PRIVATE rust_cpp_mixed)
