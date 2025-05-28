@@ -1,12 +1,68 @@
+// src/fuse_clients/ffi.rs
 use std::os::raw::{c_char, c_int, c_void};
 use std::ffi::{CStr, CString};
 use std::collections::HashMap;
 
-// 导入 FuseAppConfig 及其 KeyValue
+use crate::fuse_clients::{FuseClients as RustFuseClients, FuseConfig};
 use crate::fuse_app_config::{FuseAppConfig, KeyValue as FuseKeyValue};
-
-// 导入 FuseApplication 模块
 use crate::fuse_application::{ApplicationBase, FuseApplication as OtherFuseApplication, AppInfo};
+
+#[repr(C)]
+pub struct FuseClients {
+    _private: c_void,
+}
+
+#[no_mangle]
+pub extern "C" fn fuse_clients_new(mount_point: *const c_char, token: *const c_char) -> *mut FuseClients {
+    let mount_point = unsafe { CStr::from_ptr(mount_point).to_string_lossy().into_owned() };
+    let token = unsafe { CStr::from_ptr(token).to_string_lossy().into_owned() };
+
+    let config = FuseConfig::default();
+    Box::into_raw(Box::new(RustFuseClients::new(config, mount_point, token))) as *mut _
+}
+
+#[no_mangle]
+pub extern "C" fn fuse_clients_start(clients: *mut FuseClients) {
+    if !clients.is_null() {
+        unsafe {
+            let clients_ref = &mut *(clients as *mut RustFuseClients);
+            // 使用 Tokio runtime 来运行 async 函数
+            let rt = tokio::runtime::Runtime::new().unwrap();
+            rt.block_on(clients_ref.start());
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn fuse_clients_stop(clients: *mut FuseClients) {
+    if !clients.is_null() {
+        unsafe {
+            let clients_ref = &*(clients as *mut RustFuseClients);
+            let rt = tokio::runtime::Runtime::new().unwrap();
+            rt.block_on(clients_ref.stop());
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn fuse_clients_periodic_sync_scan(clients: *mut FuseClients) {
+    if !clients.is_null() {
+        unsafe {
+            let clients_ref = &*(clients as *mut RustFuseClients);
+            let rt = tokio::runtime::Runtime::new().unwrap();
+            rt.block_on(clients_ref.periodic_sync_scan());
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn fuse_clients_free(clients: *mut FuseClients) {
+    if !clients.is_null() {
+        unsafe {
+            Box::from_raw(clients);
+        }
+    }
+}
 
 /// opaque 结构体（用于 C++ 拿到指针）
 #[repr(C)]

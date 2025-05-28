@@ -1,39 +1,5 @@
-/*
-#ifndef RUST_FUSE_FFI_H
-#define RUST_FUSE_FFI_H
+// include/rust_fuse_ffi.h
 
-#include <stdbool.h>
-
-typedef struct KeyValueC {
-    const char* key;
-    const char* value;
-} KeyValueC;
-
-typedef struct FuseAppConfig FuseAppConfig;
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-// 创建对象
-FuseAppConfig* fuse_app_config_new();
-
-// 初始化配置
-void fuse_app_config_init(FuseAppConfig* obj,
-                          const char* file_path,
-                          bool dump,
-                          const KeyValueC* updates,
-                          unsigned int update_len);
-
-// 销毁对象
-void fuse_app_config_free(FuseAppConfig* obj);
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif // RUST_FUSE_FFI_H
-*/
 #ifndef RUST_FUSE_FFI_H
 #define RUST_FUSE_FFI_H
 
@@ -43,6 +9,14 @@ void fuse_app_config_free(FuseAppConfig* obj);
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+typedef struct FuseClients FuseClients;
+
+FuseClients* fuse_clients_new(const char* mount_point, const char* token);
+void fuse_clients_start(FuseClients*);
+void fuse_clients_stop(FuseClients*);
+void fuse_clients_periodic_sync_scan(FuseClients*);
+void fuse_clients_free(FuseClients*);
 
 // 原有 FuseAppConfig 接口
 typedef struct KeyValueC {
