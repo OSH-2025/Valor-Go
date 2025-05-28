@@ -1,3 +1,4 @@
+/*
 #include "rust_fuse_ffi.h"
 #include <vector>
 #include <iostream>
@@ -16,7 +17,8 @@ int main() {
     std::cout << "Rust FuseAppConfig initialized successfully!" << std::endl;
     return 0;
 }
-/*
+*/
+
 #include "rust_fuse_ffi.h"
 #include <iostream>
 
@@ -39,4 +41,3 @@ int main() {
 
     return 0;
 }
-*/

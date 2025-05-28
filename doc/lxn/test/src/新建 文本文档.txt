@@ -1,0 +1,465 @@
+// src/fuse/FuseAppConfig.rs
+use std::string::String;
+use std::vec::Vec;
+/*
+#[derive(Debug)]
+pub struct KeyValue {
+    pub key: String,
+    pub value: String,
+}*/
+#[derive(Debug, Clone)]
+pub struct KeyValue {
+    pub key: String,
+    pub value: String,
+}
+impl KeyValue {
+    pub fn new(key: String, value: String) -> Self {
+        KeyValue { key, value }
+    }
+}
+
+pub trait ConfigBase {
+    fn init(&mut self, file_path: &str, dump: bool, updates: Vec<KeyValue>) -> Result<(), String>;
+}
+
+pub struct FuseAppConfig {
+    node_id: u64,
+}
+
+impl FuseAppConfig {
+    pub fn new() -> Self {
+        FuseAppConfig { node_id: 0 }
+    }
+
+    pub fn init(&mut self, file_path: &str, dump: bool, updates: Vec<KeyValue>) {
+        let res = ApplicationBase::init_config(self, file_path, dump, updates);
+        if let Err(e) = res {
+            panic!("Init app config failed: {:?}. filePath: {}. dump: {}", e, file_path, dump);
+        }
+    }
+
+    pub fn get_node_id(&self) -> u64 {
+        self.node_id
+    }
+}
+
+pub struct ApplicationBase;
+
+impl ApplicationBase {
+    pub fn init_config(
+        config: &mut FuseAppConfig,
+        file_path: &str,
+        dump: bool,
+        updates: Vec<KeyValue>,
+    ) -> Result<(), String> {
+        // TODO: 实际配置加载逻辑
+        Ok(())
+    }
+}
+
+// src/fuse/FuseApplication.rs
+use crate::fuse_app_config::KeyValue;
+
+
+use std::collections::HashMap;
+
+// 模拟配置对象
+pub trait ConfigBase {
+    fn init(&mut self, file_path: &str, dump: bool, updates: Vec<KeyValue>);
+}
+
+// FuseAppConfig 结构体（已在 fuse_app_config.rs 中定义）
+pub struct FuseAppConfig {
+    pub node_id: u64,
+}
+
+impl FuseAppConfig {
+    pub fn new() -> Self {
+        FuseAppConfig { node_id: 0 }
+    }
+
+    pub fn init(&mut self, file_path: &str, dump: bool, updates: Vec<KeyValue>) {
+        // 模拟配置初始化
+        if dump {
+            println!("Dumping default config...");
+        }
+
+        for kv in &updates {
+            println!("Update: {} = {}", kv.key, kv.value);
+        }
+
+        self.node_id = 123;
+    }
+}
+
+// AppInfo 结构体，用于返回应用信息
+#[derive(Debug)]
+pub struct AppInfo {
+    pub node_id: u64,
+    pub hostname: String,
+}
+
+// ApplicationBase trait：模拟 C++ 的抽象类接口
+pub trait ApplicationBase {
+    fn parse_flags(&mut self, argc: i32, argv: Vec<String>) -> Result<(), String>;
+    fn init_application(&mut self) -> Result<(), String>;
+    fn stop(&mut self);
+    fn main_loop(&self) -> i32;
+    fn get_config(&self) -> &dyn ConfigBase;
+    fn info(&self) -> Option<&AppInfo>;
+    fn config_pushable(&self) -> bool;
+    fn on_config_updated(&self);
+}
+
+// FuseApplication 实现 ApplicationBase 接口
+pub struct FuseApplication {
+    impl_: FuseApplicationImpl,
+}
+
+struct FuseApplicationImpl {
+    hf3fs_config: FuseAppConfig,
+    app_info: AppInfo,
+    config_flags: HashMap<String, String>,
+    program_name: String,
+    allow_other: bool,
+    mountpoint: String,
+    max_buf_size: usize,
+    cluster_id: String,
+}
+
+impl FuseApplication {
+    pub fn new() -> Self {
+        Self {
+            impl_: FuseApplicationImpl {
+                hf3fs_config: FuseAppConfig::new(),
+                app_info: AppInfo {
+                    node_id: 0,
+                    hostname: "localhost".to_string(),
+                },
+                config_flags: HashMap::new(),
+                program_name: "rust_fuse".to_string(),
+                allow_other: false,
+                mountpoint: "/mnt/hf3fs".to_string(),
+                max_buf_size: 1024 * 1024,
+                cluster_id: "default".to_string(),
+            },
+        }
+    }
+}
+
+impl ApplicationBase for FuseApplication {
+    fn parse_flags(&mut self, argc: i32, argv: Vec<String>) -> Result<(), String> {
+        // 简单模拟命令行参数解析
+        for arg in &argv {
+            if arg == "--allow-other" {
+                self.impl_.allow_other = true;
+            } else if arg.starts_with("--mountpoint=") {
+                let parts: Vec<&str> = arg.split('=').collect();
+                if parts.len() == 2 {
+                    self.impl_.mountpoint = parts[1].to_string();
+                }
+            } else if arg.starts_with("--cluster-id=") {
+                let parts: Vec<&str> = arg.split('=').collect();
+                if parts.len() == 2 {
+                    self.impl_.cluster_id = parts[1].to_string();
+                }
+            }
+        }
+
+        // 模拟加载配置标志
+        self.impl_.config_flags.insert(
+            "test_key".to_string(),
+            "test_value".to_string(),
+        );
+
+        Ok(())
+    }
+
+    fn init_application(&mut self) -> Result<(), String> {
+        // 模拟打印默认配置
+        if self.config_pushable() {
+            println!("Dumping default config...");
+            println!("{}", self.impl_.hf3fs_config_to_string());
+        }
+
+        // 初始化组件
+        println!("Init common components...");
+        self.impl_.app_info.node_id = 123;
+
+        // 模拟配置初始化
+        self.impl_.hf3fs_config.init(&self.impl_.mountpoint, true, vec![]);
+
+        // 模拟持久化配置
+        self.on_config_updated();
+
+        Ok(())
+    }
+
+    fn stop(&mut self) {
+        // 停止 fuse 客户端
+        println!("Stopping fuse clients...");
+    }
+
+    fn main_loop(&self) -> i32 {
+        // 主循环逻辑
+        println!("Running fuse main loop...");
+        std::thread::sleep(std::time::Duration::from_secs(5));
+        println!("Main loop exited.");
+        0
+    }
+
+    fn get_config(&self) -> &dyn ConfigBase {
+        &self.impl_.hf3fs_config
+    }
+
+    fn info(&self) -> Option<&AppInfo> {
+        Some(&self.impl_.app_info)
+    }
+
+    fn config_pushable(&self) -> bool {
+        // 模拟是否可以推送配置
+        true
+    }
+
+    fn on_config_updated(&self) {
+        // 配置更新回调
+        println!("Persisting config...");
+    }
+}
+
+impl FuseApplicationImpl {
+    fn hf3fs_config_to_string(&self) -> String {
+        format!(
+            "Mountpoint: {}\nMaxBufSize: {}\nClusterID: {}",
+            self.mountpoint, self.max_buf_size, self.cluster_id
+        )
+    }
+}
+
+// 给FuseAppConfig实现ConfigBase trait
+impl ConfigBase for FuseAppConfig {
+    fn init(&mut self, file_path: &str, dump: bool, updates: Vec<KeyValue>) {
+        self.init(file_path, dump, updates)
+    }
+}
+
+// src/fuse/FuseAppConfig.cc
+#include "FuseAppConfig.h"
+
+#include "common/app/ApplicationBase.h"
+
+namespace hf3fs::fuse {
+void FuseAppConfig::init(const String &filePath, bool dump, const std::vector<config::KeyValue> &updates) {
+  auto res = ApplicationBase::initConfig(*this, filePath, dump, updates);
+  XLOGF_IF(FATAL, !res, "Init app config failed: {}. filePath: {}. dump: {}", res.error(), filePath, dump);
+}
+}  // namespace hf3fs::fuse
+
+
+// src/fuse/FuseAppConfig.h
+#pragma once
+
+#include "common/app/NodeId.h"
+#include "common/net/ib/IBDevice.h"
+#include "common/utils/ConfigBase.h"
+
+namespace hf3fs::fuse {
+struct FuseAppConfig : public ConfigBase<FuseAppConfig> {
+ public:
+  using Base = ConfigBase<FuseAppConfig>;
+  using Base::init;
+
+  void init(const String &filePath, bool dump, const std::vector<config::KeyValue> &updates);
+  flat::NodeId getNodeId() const { return flat::NodeId(0); }
+};
+}  // namespace hf3fs::fuse
+
+
+
+
+// src/fuse/FuseApplication.cc
+#ifdef ENABLE_FUSE_APPLICATION
+
+#include "FuseApplication.h"
+
+#include "FuseMainLoop.h"
+#include "FuseOps.h"
+#include "common/app/Thread.h"
+#include "common/app/Utils.h"
+
+DECLARE_string(cfg);
+DECLARE_bool(dump_default_cfg);
+DECLARE_bool(use_local_cfg);
+
+namespace hf3fs::fuse {
+
+struct FuseApplication::Impl {
+  Result<Void> parseFlags(int *argc, char ***argv);
+  Result<Void> initApplication();
+  Result<Void> initFuseClients();
+  void stop();
+  int mainLoop();
+
+  Config hf3fsConfig;
+  flat::AppInfo appInfo;
+  std::unique_ptr<Launcher> launcher_ = std::make_unique<Launcher>();
+
+  std::unique_ptr<ConfigCallbackGuard> onLogConfigUpdated_;
+  std::unique_ptr<ConfigCallbackGuard> onMemConfigUpdated_;
+
+  ConfigFlags configFlags_;
+  String programName;
+  bool allowOther = false;
+  String configMountpoint;
+  size_t configMaxBufSize = 0;
+  String configClusterId;
+};
+
+FuseApplication::FuseApplication()
+    : impl_(std::make_unique<Impl>()) {}
+
+FuseApplication::~FuseApplication() = default;
+
+Result<Void> FuseApplication::Impl::parseFlags(int *argc, char ***argv) {
+  RETURN_ON_ERROR(launcher_->parseFlags(argc, argv));
+
+  static constexpr std::string_view dynamicConfigPrefix = "--config.";
+  RETURN_ON_ERROR(ApplicationBase::parseFlags(dynamicConfigPrefix, argc, argv, configFlags_));
+
+  programName = (*argv)[0];
+  return Void{};
+}
+
+Result<Void> FuseApplication::parseFlags(int *argc, char ***argv) { return impl_->parseFlags(argc, argv); }
+
+Result<Void> FuseApplication::Impl::initApplication() {
+  if (FLAGS_dump_default_cfg) {
+    fmt::print("{}\n", hf3fsConfig.toString());
+    exit(0);
+  }
+
+  auto firstInitRes = launcher_->init();
+  XLOGF_IF(FATAL, !firstInitRes, "Failed to init launcher: {}", firstInitRes.error());
+
+  app_detail::loadAppInfo([this] { return launcher_->loadAppInfo(); }, appInfo);
+  app_detail::initConfig(hf3fsConfig, configFlags_, appInfo, [this] { return launcher_->loadConfigTemplate(); });
+  XLOGF(INFO, "Server config inited");
+
+  app_detail::initCommonComponents(hf3fsConfig.common(), kName, appInfo.nodeId);
+
+  onLogConfigUpdated_ = app_detail::makeLogConfigUpdateCallback(hf3fsConfig.common().log(), kName);
+  onMemConfigUpdated_ = app_detail::makeMemConfigUpdateCallback(hf3fsConfig.common().memory(), appInfo.hostname);
+
+  XLOGF(INFO, "Full Config:\n{}", hf3fsConfig.toString());
+  app_detail::persistConfig(hf3fsConfig);
+
+  XLOGF(INFO, "Start to init fuse clients");
+  auto initRes = initFuseClients();
+  XLOGF_IF(FATAL, !initRes, "Init fuse clients failed: {}", initRes.error());
+  XLOGF(INFO, "Init fuse clients finished");
+
+  launcher_.reset();
+
+  return Void{};
+}
+
+Result<Void> FuseApplication::Impl::initFuseClients() {
+  const auto &launcherConfig = launcher_->launcherConfig();
+  allowOther = launcherConfig.allow_other();
+  configMountpoint = launcherConfig.mountpoint();
+  configMaxBufSize = hf3fsConfig.io_bufs().max_buf_size();
+  configClusterId = launcherConfig.cluster_id();
+
+  auto &d = getFuseClientsInstance();
+  RETURN_ON_ERROR(d.init(appInfo, launcherConfig.mountpoint(), launcherConfig.token_file(), hf3fsConfig));
+  return Void{};
+}
+
+Result<Void> FuseApplication::initApplication() { return impl_->initApplication(); }
+
+void FuseApplication::Impl::stop() {
+  getFuseClientsInstance().stop();
+  hf3fs::stopAndJoin(nullptr);
+}
+
+void FuseApplication::stop() { impl_->stop(); }
+
+config::IConfig *FuseApplication::getConfig() { return &impl_->hf3fsConfig; }
+
+const flat::AppInfo *FuseApplication::info() const { return &impl_->appInfo; }
+
+bool FuseApplication::configPushable() const { return FLAGS_cfg.empty() && !FLAGS_use_local_cfg; }
+
+void FuseApplication::onConfigUpdated() { app_detail::persistConfig(impl_->hf3fsConfig); }
+
+int FuseApplication::Impl::mainLoop() {
+  Thread::unblockInterruptSignals();
+
+  return fuseMainLoop(programName, allowOther, configMountpoint, configMaxBufSize, configClusterId);
+}
+
+int FuseApplication::mainLoop() { return impl_->mainLoop(); }
+
+}  // namespace hf3fs::fuse
+
+#endif
+
+
+//src/fuse/FuseApplication.h
+#pragma once
+
+#ifdef ENABLE_FUSE_APPLICATION
+
+#include "FuseAppConfig.h"
+#include "FuseConfig.h"
+#include "FuseConfigFetcher.h"
+#include "FuseLauncherConfig.h"
+#include "common/app/ApplicationBase.h"
+#include "core/app/ServerLauncher.h"
+
+namespace hf3fs::fuse {
+class FuseApplication : public ApplicationBase {
+ public:
+  static constexpr auto kName = "Fuse";
+  static constexpr auto kNodeType = flat::NodeType::FUSE;
+
+  using AppConfig = FuseAppConfig;
+  using LauncherConfig = FuseLauncherConfig;
+  using RemoteConfigFetcher = FuseConfigFetcher;
+  using Launcher = core::ServerLauncher<FuseApplication>;
+
+  using Config = FuseConfig;
+
+  FuseApplication();
+  ~FuseApplication();
+
+ private:
+  Result<Void> parseFlags(int *argc, char ***argv) final;
+
+  Result<Void> initApplication() final;
+
+  void stop() final;
+
+  int mainLoop() final;
+
+  config::IConfig *getConfig() final;
+
+  const flat::AppInfo *info() const final;
+
+  bool configPushable() const final;
+
+  void onConfigUpdated() final;
+
+ private:
+  Result<Void> initServer();
+
+  Result<Void> startServer();
+
+  struct Impl;
+  std::unique_ptr<Impl> impl_;
+};
+}  // namespace hf3fs::fuse
+
+#endif
+
+

@@ -1,3 +1,4 @@
+/*
 #ifndef RUST_FUSE_FFI_H
 #define RUST_FUSE_FFI_H
 
@@ -32,7 +33,7 @@ void fuse_app_config_free(FuseAppConfig* obj);
 #endif
 
 #endif // RUST_FUSE_FFI_H
-/*
+*/
 #ifndef RUST_FUSE_FFI_H
 #define RUST_FUSE_FFI_H
 
@@ -96,4 +97,3 @@ void fuse_application_free(FuseApplication*);
 #endif
 
 #endif // RUST_FUSE_FFI_H
-*/
