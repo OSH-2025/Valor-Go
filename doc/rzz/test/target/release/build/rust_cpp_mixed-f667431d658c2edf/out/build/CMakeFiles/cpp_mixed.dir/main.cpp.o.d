@@ -1,7 +1,7 @@
 CMakeFiles/cpp_mixed.dir/main.cpp.o: \
  /home/renzz/Desktop/Valor-Go/doc/rzz/test/cpp/main.cpp \
  /usr/include/stdc-predef.h \
- /home/renzz/Desktop/Valor-Go/doc/rzz/test/cpp/../include/rust_fuse_ffi.h \
+ /home/renzz/Desktop/Valor-Go/doc/rzz/test/cpp/rust_fuse_ffi.h \
  /usr/include/c++/13/iostream /usr/include/c++/13/bits/requires_hosted.h \
  /usr/include/x86_64-linux-gnu/c++/13/bits/c++config.h \
  /usr/include/x86_64-linux-gnu/c++/13/bits/os_defines.h \
