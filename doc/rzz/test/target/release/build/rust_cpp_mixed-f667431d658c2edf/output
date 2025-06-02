@@ -18,7 +18,7 @@ running: cd "/home/renzz/Desktop/Valor-Go/doc/rzz/test/target/release/build/rust
 -- Configuring done (0.0s)
 -- Generating done (0.0s)
 -- Build files have been written to: /home/renzz/Desktop/Valor-Go/doc/rzz/test/target/release/build/rust_cpp_mixed-f667431d658c2edf/out/build
-running: cd "/home/renzz/Desktop/Valor-Go/doc/rzz/test/target/release/build/rust_cpp_mixed-f667431d658c2edf/out/build" && LC_ALL="C" MAKEFLAGS="-j --jobserver-fds=8,9 --jobserver-auth=8,9" "cmake" "--build" "/home/renzz/Desktop/Valor-Go/doc/rzz/test/target/release/build/rust_cpp_mixed-f667431d658c2edf/out/build" "--target" "cpp_mixed" "--config" "Release"
+running: cd "/home/renzz/Desktop/Valor-Go/doc/rzz/test/target/release/build/rust_cpp_mixed-f667431d658c2edf/out/build" && LC_ALL="C" MAKEFLAGS="-j --jobserver-fds=9,11 --jobserver-auth=9,11" "cmake" "--build" "/home/renzz/Desktop/Valor-Go/doc/rzz/test/target/release/build/rust_cpp_mixed-f667431d658c2edf/out/build" "--target" "cpp_mixed" "--config" "Release"
 [100%] Built target cpp_mixed
 cargo:root=/home/renzz/Desktop/Valor-Go/doc/rzz/test/target/release/build/rust_cpp_mixed-f667431d658c2edf/out
 cargo:rustc-link-search=native=target/release/deps
