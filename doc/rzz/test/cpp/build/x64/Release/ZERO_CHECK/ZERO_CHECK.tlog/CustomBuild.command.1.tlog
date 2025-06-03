@@ -1,0 +1,10 @@
+^C:\USERS\29596\DESKTOP\TEST\CPP\BUILD\CMAKEFILES\4F3B17E9B3778D8E69070B25F4CE2196\GENERATE.STAMP.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/29596/Desktop/test/cpp -BC:/Users/29596/Desktop/test/cpp/build --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file C:/Users/29596/Desktop/test/cpp/build/rust_cpp_mixed.sln
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

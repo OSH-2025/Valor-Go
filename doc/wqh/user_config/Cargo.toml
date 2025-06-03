@@ -1,0 +1,13 @@
+[package]
+name = "userconfig_rs"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "userconfig_rs"
+crate-type = ["cdylib"] # 构建为 C 动态库（Windows: .dll, Linux: .so, macOS: .dylib）
+
+[dependencies]
+anyhow = "1.0"
+tokio = { version = "1", features = ["full"] }
+dashmap = "5.5.3"

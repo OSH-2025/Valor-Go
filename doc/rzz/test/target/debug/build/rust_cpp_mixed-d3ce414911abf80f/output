@@ -1,0 +1,39 @@
+CMAKE_TOOLCHAIN_FILE_x86_64-unknown-linux-gnu = None
+CMAKE_TOOLCHAIN_FILE_x86_64_unknown_linux_gnu = None
+HOST_CMAKE_TOOLCHAIN_FILE = None
+CMAKE_TOOLCHAIN_FILE = None
+CMAKE_GENERATOR_x86_64-unknown-linux-gnu = None
+CMAKE_GENERATOR_x86_64_unknown_linux_gnu = None
+HOST_CMAKE_GENERATOR = None
+CMAKE_GENERATOR = None
+CMAKE_PREFIX_PATH_x86_64-unknown-linux-gnu = None
+CMAKE_PREFIX_PATH_x86_64_unknown_linux_gnu = None
+HOST_CMAKE_PREFIX_PATH = None
+CMAKE_PREFIX_PATH = None
+CMAKE_x86_64-unknown-linux-gnu = None
+CMAKE_x86_64_unknown_linux_gnu = None
+HOST_CMAKE = None
+CMAKE = None
+running: cd "/home/renzz/Desktop/Valor-Go/doc/rzz/test/target/debug/build/rust_cpp_mixed-d3ce414911abf80f/out/build" && CMAKE_PREFIX_PATH="" LC_ALL="C" "cmake" "/home/renzz/Desktop/Valor-Go/doc/rzz/test/cpp" "-DCMAKE_INSTALL_PREFIX=/home/renzz/Desktop/Valor-Go/doc/rzz/test/target/debug/build/rust_cpp_mixed-d3ce414911abf80f/out" "-DCMAKE_C_FLAGS= -ffunction-sections -fdata-sections -fPIC -m64" "-DCMAKE_C_COMPILER=/usr/bin/cc" "-DCMAKE_CXX_FLAGS= -ffunction-sections -fdata-sections -fPIC -m64" "-DCMAKE_CXX_COMPILER=/usr/bin/c++" "-DCMAKE_ASM_FLAGS= -ffunction-sections -fdata-sections -fPIC -m64" "-DCMAKE_ASM_COMPILER=/usr/bin/cc" "-DCMAKE_BUILD_TYPE=Debug"
+-- The C compiler identification is GNU 13.3.0
+-- The CXX compiler identification is GNU 13.3.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Configuring done (3.9s)
+-- Generating done (0.0s)
+-- Build files have been written to: /home/renzz/Desktop/Valor-Go/doc/rzz/test/target/debug/build/rust_cpp_mixed-d3ce414911abf80f/out/build
+running: cd "/home/renzz/Desktop/Valor-Go/doc/rzz/test/target/debug/build/rust_cpp_mixed-d3ce414911abf80f/out/build" && LC_ALL="C" MAKEFLAGS="-j --jobserver-fds=11,12 --jobserver-auth=11,12" "cmake" "--build" "/home/renzz/Desktop/Valor-Go/doc/rzz/test/target/debug/build/rust_cpp_mixed-d3ce414911abf80f/out/build" "--target" "cpp_mixed" "--config" "Debug"
+[ 50%] Building CXX object CMakeFiles/cpp_mixed.dir/main.cpp.o
+[100%] Linking CXX static library /home/renzz/Desktop/Valor-Go/doc/rzz/test/target/release/deps/libcpp_mixed.a
+[100%] Built target cpp_mixed
+cargo:root=/home/renzz/Desktop/Valor-Go/doc/rzz/test/target/debug/build/rust_cpp_mixed-d3ce414911abf80f/out
+cargo:rustc-link-search=native=target/release/deps
+cargo:rustc-link-lib=static=cpp_mixed
