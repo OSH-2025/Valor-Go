@@ -1,11 +1,8 @@
-// src/lib.rs
+pub mod fuse_clients;
+pub mod ffi;
+pub mod fuse_app_config;
+pub mod fuse_application;
 
-mod fuse_app_config;
-mod fuse_application;
-mod fuse_clients;
-mod ffi;
-
-pub use fuse_app_config::*;
-pub use fuse_application::*;
-pub use fuse_clients::*;
+// 导出符号给 C/C++ 调用
 pub use ffi::*;
+pub use fuse_application::*;

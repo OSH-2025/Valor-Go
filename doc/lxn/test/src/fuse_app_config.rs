@@ -18,13 +18,16 @@ pub trait ConfigBase {
     fn init(&mut self, file_path: &str, dump: bool, updates: Vec<KeyValue>) -> Result<(), String>;
 }
 
+#[derive(Debug, Clone)]
 pub struct FuseAppConfig {
+    pub token: String,
+    pub mountpoint: String,
     node_id: u64,
 }
 
 impl FuseAppConfig {
     pub fn new() -> Self {
-        FuseAppConfig { node_id: 0 }
+        FuseAppConfig { node_id: 0, token: String::new(), mountpoint: String::new() }
     }
 
     pub fn init(&mut self, file_path: &str, dump: bool, updates: Vec<KeyValue>) {
