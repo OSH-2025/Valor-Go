@@ -1,58 +1,43 @@
+/*
+#include "rust_fuse_ffi.h"
+#include <vector>
+#include <iostream>
+
+int main() {
+    auto cfg = fuse_app_config_new();
+
+    std::vector<KeyValueC> updates = {
+        { "key1", "value1" },
+        { "key2", "value2" }
+    };
+
+    fuse_app_config_init(cfg, "config.json", true, updates.data(), updates.size());
+
+    fuse_app_config_free(cfg);
+    std::cout << "Rust FuseAppConfig initialized successfully!" << std::endl;
+    return 0;
+}
+*/
+
 #include "rust_fuse_ffi.h"
 #include <iostream>
 
-int main(int argc, const char** argv) {
+int main() {
     auto config = fuse_app_config_new();
-    if (!config) {
+    if (config == nullptr) {
         std::cerr << "Failed to create FuseAppConfig\n";
         return -1;
     }
 
-    // 初始化配置
+    // 调用 init 方法
     fuse_app_config_init(config, "config.json", true, nullptr, 0);
 
-    // 获取 Node ID
-    uint64_t node_id = fuse_app_config_get_node_id(config);
-    std::cout << "Node ID (from FuseAppConfig): " << node_id << "\n";
+    // 获取 NodeId
+    uint64_t node_id = fuse_application_get_node_id(config);
+    std::cout << "Node ID: " << node_id << std::endl;
 
-    // 创建 Application 并解析参数
-    auto app = fuse_application_new();
-    if (!app) {
-        std::cerr << "Failed to create FuseApplication\n";
-        goto cleanup_config;
-    }
-
-    int res = fuse_application_parse_flags(app, argc, argv);
-    if (res != 0) {
-        std::cerr << "Parse flags failed\n";
-        goto cleanup_app;
-    }
-
-    res = fuse_application_init(app);
-    if (res != 0) {
-        std::cerr << "Init application failed\n";
-        goto cleanup_app;
-    }
-
-    // 启动 FuseClients
-    auto clients = fuse_clients_new("/mnt/hf3fs", "dummy_token");
-    if (!clients) {
-        std::cerr << "Failed to create FuseClients\n";
-        goto cleanup_app;
-    }
-
-    fuse_clients_start(clients);
-    fuse_clients_periodic_sync_scan(clients);
-    fuse_clients_stop(clients);
-    fuse_clients_free(clients);
-
-    // 停止应用
-    fuse_application_stop(app);
-    fuse_application_free(app);
-
-cleanup_app:
+    // 释放资源
     fuse_app_config_free(config);
 
-cleanup_config:
-    return res;
+    return 0;
 }
