@@ -1,0 +1,10 @@
+[package]
+name = "iovtable_demo"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+tokio-uring = "0.4"
+anyhow = "1"
+uuid = { version = "1", features = ["v4"] }
