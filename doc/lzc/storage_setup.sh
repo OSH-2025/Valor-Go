@@ -32,9 +32,11 @@ docker run -d \
  --device=/dev/infiniband/rdma_cm \
  --env STORAGE_NODE_ID=10001 \
  --env TARGET_PATHS="/storage/data0/3fs" \
- --env REMOTE_IP="192.168.1.100:10000" \   # Storage自己的IP，根据Storage修改
- --env MGMTD_SERVER_ADDRESSES="RDMA://192.168.0.100:8000" \  # Meta节点的IP
+ --env REMOTE_IP="192.168.1.100:10000" \
+ --env MGMTD_SERVER_ADDRESSES="RDMA://192.168.0.100:8000" \
   ac2-registry.cn-hangzhou.cr.aliyuncs.com/ac2/3fs:b71ffc55-fdb7.3.63-fuse3.16.2-ubuntu22.04 ./storage.sh
+
+# 注意上面的REMOTE_IP和MGMTD_SERVER_ADDRESSES根据实际情况修改
 
 docker ps
 
