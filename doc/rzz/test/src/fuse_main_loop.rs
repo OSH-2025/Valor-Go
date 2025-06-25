@@ -1,5 +1,5 @@
 use fuser::{
-    FileAttr, FileType, Filesystem, MountOption, ReplyAttr, ReplyData, ReplyDirectory, ReplyEntry,
+    FileAttr, FileType, Filesystem, MountOption, ReplyAttr, ReplyEntry,
     Request,
 };
 use libc::c_int;

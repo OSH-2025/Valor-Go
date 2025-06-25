@@ -31,8 +31,8 @@ struct UniversalTagsResponse {
 }
 
 pub struct MgmtdClient {
-    http_client: Client,
-    mgmtd_service_url: String, // 管理服务的地址，例如 "http://mgmtd-service:8080"
+    pub http_client: Client,
+    pub mgmtd_service_url: String, // 管理服务的地址，例如 "http://mgmtd-service:8080"
 }
 
 impl MgmtdClient {

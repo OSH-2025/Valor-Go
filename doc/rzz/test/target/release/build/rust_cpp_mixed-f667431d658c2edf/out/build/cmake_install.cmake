@@ -1,8 +1,8 @@
-# Install script for directory: /home/renzz/Desktop/Valor-Go/doc/rzz/test/cpp
+# Install script for directory: /home/renzz/Valor-Go/doc/rzz/test/cpp
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
-  set(CMAKE_INSTALL_PREFIX "/home/renzz/Desktop/Valor-Go/doc/rzz/test/target/release/build/rust_cpp_mixed-f667431d658c2edf/out")
+  set(CMAKE_INSTALL_PREFIX "/home/renzz/Valor-Go/doc/rzz/test/target/release/build/rust_cpp_mixed-f667431d658c2edf/out")
 endif()
 string(REGEX REPLACE "/$" "" CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 
@@ -50,5 +50,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/home/renzz/Desktop/Valor-Go/doc/rzz/test/target/release/build/rust_cpp_mixed-f667431d658c2edf/out/build/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/home/renzz/Valor-Go/doc/rzz/test/target/release/build/rust_cpp_mixed-f667431d658c2edf/out/build/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

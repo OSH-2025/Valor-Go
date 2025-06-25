@@ -4,7 +4,7 @@
 # compile CXX with /usr/bin/c++
 CXX_DEFINES = 
 
-CXX_INCLUDES = -I/home/renzz/Desktop/Valor-Go/doc/rzz/test/cpp/../include
+CXX_INCLUDES = -I/home/renzz/Valor-Go/doc/rzz/test/cpp/../include
 
 CXX_FLAGS =  -ffunction-sections -fdata-sections -fPIC -m64 -O3 -DNDEBUG
 

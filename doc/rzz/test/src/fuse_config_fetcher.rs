@@ -39,7 +39,7 @@ use hostname;
 use std::error::Error;
 
 pub struct FuseConfigFetcher {
-    mgmtd_client: MgmtdClient,
+    pub mgmtd_client: MgmtdClient,
 }
 
 impl FuseConfigFetcher {
