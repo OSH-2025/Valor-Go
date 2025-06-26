@@ -1,6 +1,8 @@
 use crate::FuseAppConfig::{ConfigBase, KeyValue};
 use std::collections::HashMap;
 use std::time::Duration;
+use std::fs;
+use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Clone)]
 pub struct FuseConfig {
@@ -133,8 +135,33 @@ impl Default for FuseConfig {
 }
 
 impl ConfigBase for FuseConfig {
-    fn init(&mut self, _file_path: &str, _dump: bool, _updates: Vec<KeyValue>) -> Result<(), String> {
-        // TODO: 实际配置加载逻辑
+    fn init(&mut self, file_path: &str, dump: bool, updates: Vec<KeyValue>) -> Result<(), String> {
+        // 1. 读取文件
+        let content = fs::read_to_string(file_path)
+            .map_err(|e| format!("读取配置文件失败: {}", e))?;
+
+        // 2. 反序列化
+        let mut loaded: FuseConfig = toml::from_str(&content)
+            .map_err(|e| format!("解析配置文件失败: {}", e))?;
+
+        // 3. 应用 updates
+        for kv in updates {
+            match kv.key.as_str() {
+                "token" => loaded.token_file = kv.value,
+                "mountpoint" => loaded.mountpoint = kv.value,
+                // 你可以继续补充其它字段
+                _ => {}
+            }
+        }
+
+        // 4. dump
+        if dump {
+            println!("{:#?}", loaded); // 或 serde_json::to_string_pretty(&loaded)
+            std::process::exit(0);
+        }
+
+        // 5. 覆盖 self
+        *self = loaded;
         Ok(())
     }
 } 
