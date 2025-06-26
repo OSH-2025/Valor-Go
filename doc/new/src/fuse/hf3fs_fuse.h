@@ -1,27 +1,27 @@
-// #ifndef HF3FS_FUSE_H
-// #define HF3FS_FUSE_H
+#ifndef HF3FS_FUSE_H
+#define HF3FS_FUSE_H
 
-// #ifdef __cplusplus
-// extern "C" {
-// #endif
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-// #include <stdarg.h>
-// #include <stdbool.h>
-// #include <stdint.h>
-// #include <stdlib.h>
+#include <stdarg.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdlib.h>
 
-// int hf3fs_fuse_init(const char *config_path, const char *mountpoint, const char *token_file);
+int hf3fs_fuse_init(const char *config_path, const char *mountpoint, const char *token_file);
 
-// int hf3fs_fuse_run(int allow_other, uintptr_t maxbufsize, const char *cluster_id);
+int hf3fs_fuse_run(int allow_other, uintptr_t maxbufsize, const char *cluster_id);
 
-// void hf3fs_fuse_cleanup(void);
+void hf3fs_fuse_cleanup(void);
 
-// void *hf3fs_fuse_get_config(void);
+void *hf3fs_fuse_get_config(void);
 
-// int hf3fs_fuse_set_user_config(uint64_t uid, const char *key, const char *value);
+int hf3fs_fuse_set_user_config(uint64_t uid, const char *key, const char *value);
 
-// #ifdef __cplusplus
-// }
-// #endif
+#ifdef __cplusplus
+}
+#endif
 
-// #endif // HF3FS_FUSE_H
+#endif // HF3FS_FUSE_H
