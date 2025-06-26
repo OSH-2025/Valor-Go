@@ -21,6 +21,7 @@ thiserror = "1.0"
 log = "0.4"
 simplelog = "0.12"
 once_cell = "1.0"
+toml = "0.5"
 
 # From original file (no conflict)
 futures = "0.3"
