@@ -136,7 +136,7 @@ impl Filesystem for Hf3fsFuseOps {
         reply.error(ENOENT);
     }
 
-    fn getattr(&mut self, _req: &Request, ino: u64, _fh: Option<u64>, reply: ReplyAttr) {
+    fn getattr(&mut self, _req: &Request, ino: u64,/* _fh: Option<u64>,*/ reply: ReplyAttr) {
         if let Some(inode) = self.inodes.get(&ino) {
             let ttl = Duration::new(1, 0);
             reply.attr(&ttl, &inode.attr);

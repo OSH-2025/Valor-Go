@@ -39,10 +39,10 @@ impl Filesystem for Hf3fsFilesystem {
         reply.error(libc::ENOENT);
     }
 
-    fn getattr(&mut self, _req: &Request, ino: u64, _fh: Option<u64>, reply: ReplyAttr) {
+    fn getattr(&mut self, _req: &Request, ino: u64, /*_fh: Option<u64>,*/ reply: ReplyAttr) {
         println!(
-            "getattr(ino: {}, fh: {:?}) - ops.cluster_id: {}",
-            ino, _fh, self.ops.cluster_id
+            "getattr(ino: {}) - ops.cluster_id: {}",
+            ino, self.ops.cluster_id
         );
         // This is a placeholder. You'll need to implement actual getattr logic.
         // For now, let's return attributes for a simple directory if ino == 1 (root)

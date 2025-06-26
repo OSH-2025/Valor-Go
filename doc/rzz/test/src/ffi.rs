@@ -1,176 +1,100 @@
-use std::ffi::{CString, CStr};
-use std::os::raw::c_char;
-use std::collections::HashMap;
-use crate::fuse_launcher_config::{FuseLauncherConfig, KeyValue};
-use crate::mgmtd_client::MgmtdClient;
-use crate::fuse_config_fetcher::FuseConfigFetcher;
-use crate::fuse_ops::Hf3fsFuseOps;
+// FFI 接口层，提供 C 接口供 C++ 代码调用
+use std::ffi::{CStr, CString};
+use std::os::raw::{c_char, c_int, c_void};
+use std::ptr;
+use std::default::Default;
 
-// ========== fuse_launcher_config FFI ==========
+use crate::FuseConfig::FuseConfig;
+use crate::FuseClients::FuseClients;
+use crate::fuse_main_loop_rs;
+use crate::FuseAppConfig::ConfigBase;
+use crate::FuseAppConfig::FuseAppConfig;
+use crate::FuseApplication::FuseApplication;
+
 #[no_mangle]
-pub extern "C" fn complete_app_info(app_info: *const c_char) -> *mut c_char {
-    let mut config = FuseLauncherConfig::new();
-
-    if !app_info.is_null() {
-        let app_info_str = unsafe { CStr::from_ptr(app_info).to_string_lossy().into_owned() };
-        let updates_map: HashMap<String, String> = serde_json::from_str(&app_info_str).unwrap_or_default();
-        let updates_vec: Vec<KeyValue> = updates_map
-            .into_iter()
-            .map(|(k, v)| KeyValue { key: k, value: v })
-            .collect();
-        config.init("", false, &updates_vec);
+pub extern "C" fn hf3fs_fuse_init(
+    config_path: *const c_char,
+    mountpoint: *const c_char,
+    token_file: *const c_char,
+) -> c_int {
+    if config_path.is_null() || mountpoint.is_null() || token_file.is_null() {
+        return -1;
     }
 
-    let result = serde_json::to_string(&config).unwrap();
-    let c_result = CString::new(result).unwrap();
-    c_result.into_raw()
-}
+    let config_path_str = unsafe { CStr::from_ptr(config_path).to_string_lossy() };
+    let mountpoint_str = unsafe { CStr::from_ptr(mountpoint).to_string_lossy() };
+    let token_file_str = unsafe { CStr::from_ptr(token_file).to_string_lossy() };
 
-#[no_mangle]
-pub extern "C" fn free_string(ptr: *mut c_char) {
-    if !ptr.is_null() {
-        unsafe {
-            let _ = CString::from_raw(ptr);
-        }
+    // 加载配置
+    let mut config: FuseConfig = Default::default();
+    if let Err(_) = config.init(&*config_path_str, false, vec![]) {
+        return -2;
     }
-}
 
-#[no_mangle]
-pub extern "C" fn get_default_launcher_config() -> *mut c_char {
-    let config = FuseLauncherConfig::default();
-    let result = serde_json::to_string(&config).unwrap();
-    CString::new(result).unwrap().into_raw()
-}
-
-// ========== mgmtd_client FFI ==========
-static mut GLOBAL_MGMT: Option<MgmtdClient> = None;
-
-#[no_mangle]
-pub extern "C" fn mgmt_init(url: *const c_char) {
-    let url = unsafe { CStr::from_ptr(url).to_string_lossy().into_owned() };
-    unsafe { GLOBAL_MGMT = Some(MgmtdClient::new(&url)); }
-}
-
-#[no_mangle]
-pub extern "C" fn mgmt_get_url(buffer: *mut c_char, max_len: usize) -> usize {
-    unsafe {
-        if let Some(mgmt) = &GLOBAL_MGMT {
-            let url = &mgmt.mgmtd_service_url;
-            let bytes = url.as_bytes();
-            let len = bytes.len().min(max_len - 1);
-            if !buffer.is_null() {
-                std::ptr::copy_nonoverlapping(bytes.as_ptr(), buffer as *mut u8, len);
-                *buffer.add(len) = 0;
-            }
-            return len;
-        }
+    // 初始化 FUSE 客户端
+    let mut clients: FuseClients = Default::default();
+    let app_config = FuseAppConfig::new();
+    let app = FuseApplication::new();
+    if !clients.init(&app_config, &app) {
+        return -3;
     }
-    0
-}
 
-// ========== fuse_config_fetcher FFI ==========
-static mut GLOBAL_FETCHER: Option<FuseConfigFetcher> = None;
-
-#[no_mangle]
-pub extern "C" fn fetcher_init(url: *const c_char) {
-    let url = unsafe { CStr::from_ptr(url).to_string_lossy().into_owned() };
-    unsafe { GLOBAL_FETCHER = Some(FuseConfigFetcher::new(&url)); }
-}
-
-#[no_mangle]
-pub extern "C" fn fetcher_get_mgmt_url(buffer: *mut c_char, max_len: usize) -> usize {
-    unsafe {
-        if let Some(fetcher) = &GLOBAL_FETCHER {
-            let url = &fetcher.mgmtd_client.mgmtd_service_url;
-            let bytes = url.as_bytes();
-            let len = bytes.len().min(max_len - 1);
-            if !buffer.is_null() {
-                std::ptr::copy_nonoverlapping(bytes.as_ptr(), buffer as *mut u8, len);
-                *buffer.add(len) = 0;
-            }
-            return len;
-        }
-    }
-    0
-}
-
-// ========== fuse_ops FFI ==========
-static mut GLOBAL_FS: Option<Hf3fsFuseOps> = None;
-
-#[no_mangle]
-pub extern "C" fn fs_init() {
-    unsafe { GLOBAL_FS = Some(Hf3fsFuseOps::new()); }
-}
-
-#[no_mangle]
-pub extern "C" fn fs_create_file(name: *const c_char) -> u64 {
-    unsafe {
-        if let Some(fs) = &mut GLOBAL_FS {
-            let _name = CStr::from_ptr(name).to_string_lossy().into_owned();
-            // 这里只是演示，实际应调用 fuse_ops 的创建逻辑
-            let ino = fs.alloc_ino();
-            // 省略插入到根目录的逻辑
-            return ino as u64;
-        }
-    }
     0
 }
 
 #[no_mangle]
-pub extern "C" fn fs_create_file_in_root(name: *const c_char) -> u64 {
-    unsafe {
-        if let Some(fs) = &mut GLOBAL_FS {
-            let name = CStr::from_ptr(name).to_string_lossy().into_owned();
-            let ino = fs.alloc_ino();
-            if let Some(root) = fs.inodes.get_mut(&1) {
-                if let crate::fuse_ops::InodeData::Directory { entries } = &mut root.data {
-                    entries.insert(name.into(), ino);
-                }
-            }
-            // 实际还应插入 inode
-            return ino as u64;
-        }
+pub extern "C" fn hf3fs_fuse_run(
+    allow_other: c_int,
+    maxbufsize: usize,
+    cluster_id: *const c_char,
+) -> c_int {
+    if cluster_id.is_null() {
+        return -1;
     }
-    0
+
+    let cluster_id_str = unsafe { CStr::from_ptr(cluster_id).to_string_lossy() };
+    
+    // 运行 FUSE 主循环
+    match fuse_main_loop_rs(
+        "hf3fs_fuse".to_string(),
+        allow_other != 0,
+        "/mnt".to_string(), // 这里可以从配置中获取
+        maxbufsize,
+        cluster_id_str.to_string(),
+    ) {
+        Ok(_) => 0,
+        Err(e) => e,
+    }
 }
 
 #[no_mangle]
-pub extern "C" fn fs_list_root_files(buffer: *mut u64, max: usize) -> usize {
-    unsafe {
-        if let Some(fs) = &GLOBAL_FS {
-            if let Some(root) = fs.inodes.get(&1) {
-                if let crate::fuse_ops::InodeData::Directory { entries } = &root.data {
-                    let mut count = 0;
-                    for (_name, &ino) in entries.iter().take(max) {
-                        if !buffer.is_null() {
-                            *buffer.add(count) = ino;
-                        }
-                        count += 1;
-                    }
-                    return count;
-                }
-            }
-        }
-    }
-    0
+pub extern "C" fn hf3fs_fuse_cleanup() {
+    let mut clients: FuseClients = Default::default();
+    clients.stop();
+}
+
+// 配置相关 FFI 接口
+#[no_mangle]
+pub extern "C" fn hf3fs_fuse_get_config() -> *mut c_void {
+    // 返回配置指针，C++ 代码可以通过其他接口访问
+    ptr::null_mut()
 }
 
 #[no_mangle]
-pub extern "C" fn fs_get_file_size(ino: u64) -> u64 {
-    unsafe {
-        if let Some(fs) = &GLOBAL_FS {
-            if let Some(inode) = fs.inodes.get(&ino) {
-                return inode.attr.size;
-            }
-        }
+pub extern "C" fn hf3fs_fuse_set_user_config(
+    uid: u64,
+    key: *const c_char,
+    value: *const c_char,
+) -> c_int {
+    if key.is_null() || value.is_null() {
+        return -1;
     }
-    0
-}
 
-// ========== fuse_main_loop FFI ==========
-// 这里只做演示，实际挂载 FUSE 需更复杂的参数和生命周期管理
-#[no_mangle]
-pub extern "C" fn fuse_main_loop_run_stub() -> i32 {
-    // 这里只是演示，实际应调用 fuse_main_loop 的挂载逻辑
-    0 // 返回0表示成功
-}
+    let key_str = unsafe { CStr::from_ptr(key).to_string_lossy() };
+    let value_str = unsafe { CStr::from_ptr(value).to_string_lossy() };
+
+    // 这里可以调用 UserConfig 的 set_config 方法
+    println!("Setting config for uid {}: {} = {}", uid, key_str, value_str);
+    
+    0
+} 
