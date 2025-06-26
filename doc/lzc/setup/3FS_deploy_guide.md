@@ -39,13 +39,15 @@
 2. meta配置：
    1. 按照教程来
 3. storage配置：每个服务器是一个NVMe SSD盘，一个分区，NVMe0n1p1
+4. 上传脚本文件，先给文件加权限，然后执行
 
 
 
 
 Deploy images:
-1. 原版3fs meta模块部署成功的画面![1750841786556](image/3FS_deploy_guide/1750841786556.png)
-
+1. 原版3fs meta模块部署成功的画面![1750841786556](image/3FS_deploy_guide//meta_setup_manual.png)
+2. 脚本配置3fs meta模块成功：![1750922379600](image/3FS_deploy_guide/meta_setup_script.png)
+3. 脚本配置3fs storage模块成功：![1750922915955](image/3FS_deploy_guide/1750922915955.png)
 
 
 
