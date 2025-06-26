@@ -44,14 +44,28 @@ impl FuseAppConfig {
 
 pub struct ApplicationBase;
 
+use std::fs;
+
 impl ApplicationBase {
-    pub fn init_config(
+    pub fn load_config(
         config: &mut FuseAppConfig,
         file_path: &str,
-        dump: bool,
         updates: Vec<KeyValue>,
     ) -> Result<(), String> {
-        // TODO: 实际配置加载逻辑
+        let content = fs::read_to_string(file_path)
+            .map_err(|e| format!("读取配置文件失败: {}", e))?;
+        let mut loaded: FuseAppConfig = toml::from_str(&content)
+            .map_err(|e| format!("解析配置文件失败: {}", e))?;
+        // 应用 updates
+        for kv in updates {
+            match kv.key.as_str() {
+                "token" => loaded.token = kv.value,
+                "mountpoint" => loaded.mountpoint = kv.value,
+                "node_id" => loaded.node_id = kv.value.parse().unwrap_or(0),
+                _ => {}
+            }
+        }
+        *config = loaded;
         Ok(())
     }
 }
