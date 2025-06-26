@@ -1,18 +1,18 @@
 #include "hf3fs_fuse.h"
-#include <cstring>
-#include <iostream>
-
-extern "C" int hf3fs_fuse_run(int allow_other, size_t maxbufsize, const char* cluster_id);
+#include <string>
 
 int main(int argc, char *argv[]) {
-    // 示例参数，实际可根据你的需求从命令行解析
-    int allow_other = 1;
-    size_t maxbufsize = 1048576;
-    const char* cluster_id = "default_cluster";
-
-    // 你可以根据argc/argv解析参数并传递给Rust
-    // 这里只是简单示例
-    int ret = hf3fs_fuse_run(allow_other, maxbufsize, cluster_id);
-    std::cout << "hf3fs_fuse_run returned: " << ret << std::endl;
+    if (argc < 4) {
+        printf("Usage: %s <config_path> <mountpoint> <token_file>\n", argv[0]);
+        return 1;
+    }
+    int ret = hf3fs_fuse_init(argv[1], argv[2], argv[3]);
+    if (ret != 0) {
+        printf("hf3fs_fuse_init failed: %d\n", ret);
+        return ret;
+    }
+    // 这里参数可根据需要调整
+    ret = hf3fs_fuse_run(1, 1024 * 1024, "test_cluster");
+    hf3fs_fuse_cleanup();
     return ret;
-} 
+}

@@ -1,3 +1,10 @@
+#ifndef HF3FS_FUSE_H
+#define HF3FS_FUSE_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -12,3 +19,9 @@ void hf3fs_fuse_cleanup(void);
 void *hf3fs_fuse_get_config(void);
 
 int hf3fs_fuse_set_user_config(uint64_t uid, const char *key, const char *value);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif // HF3FS_FUSE_H
