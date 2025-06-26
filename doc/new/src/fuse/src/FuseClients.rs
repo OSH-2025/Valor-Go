@@ -6,6 +6,8 @@ use crate::FuseAppConfig::FuseAppConfig;
 use crate::FuseApplication::FuseApplication;
 use crate::FuseConfig::FuseConfig;
 use tokio::task::JoinHandle;
+use tokio::sync::mpsc;
+use tokio::select;
 
 // 假设这些类型已在其它模块实现或用占位符
 // use crate::fuse_config::FuseConfig;
@@ -76,11 +78,40 @@ pub struct FuseConfig;
 pub struct UserConfig;
 pub struct IovTable;
 pub struct IoRingTable;
-pub struct IoRingJob;
+pub struct IoRingJob {
+    pub id: u64,
+    pub prio: usize, // 0:高 1:中 2:低
+}
 pub struct BoundedQueue<T>(std::marker::PhantomData<T>);
 
 impl BoundedQueue<IoRingJob> {
     pub fn new() -> Self { Self(std::marker::PhantomData) }
+}
+
+pub struct MultiPrioQueue {
+    senders: Vec<mpsc::Sender<IoRingJob>>,
+    receivers: Vec<mpsc::Receiver<IoRingJob>>,
+}
+
+impl MultiPrioQueue {
+    pub fn new(queue_size: usize, prio_count: usize) -> Self {
+        let mut senders = Vec::new();
+        let mut receivers = Vec::new();
+        for _ in 0..prio_count {
+            let (tx, rx) = mpsc::channel(queue_size);
+            senders.push(tx);
+            receivers.push(rx);
+        }
+        Self { senders, receivers }
+    }
+
+    pub fn sender(&self, prio: usize) -> mpsc::Sender<IoRingJob> {
+        self.senders[prio].clone()
+    }
+
+    pub fn receiver(&mut self, prio: usize) -> &mut mpsc::Receiver<IoRingJob> {
+        &mut self.receivers[prio]
+    }
 }
 
 #[derive(Default)]
@@ -204,10 +235,22 @@ impl FuseClients {
         };
 
         // 5. buf_pool、iovs、iors、user_config 初始化
-        self.buf_pool = Some(Arc::new(RDMABufPool)); // TODO: 参数
-        self.iovs = Some(Arc::new(IovTable)); // TODO: 参数
-        self.iors = Some(Arc::new(IoRingTable)); // TODO: 参数
-        self.user_config = Some(Arc::new(Mutex::new(UserConfig))); // TODO: 参数
+        self.buf_pool = Some(Arc::new(RDMABufPool::create(
+            config.io_bufs.max_buf_size,
+            config.rdma_buf_pool_size,
+        )));
+
+        let mountpoint = self.fuse_remount_pref.as_ref().unwrap_or(&self.fuse_mountpoint);
+        self.iovs = Some(Arc::new(IovTable::new(
+            mountpoint,
+            config.iov_limit,
+        )));
+
+        self.iors = Some(Arc::new(IoRingTable::new(
+            config.iov_limit,
+        )));
+
+        self.user_config = Some(Arc::new(Mutex::new(UserConfig::new(config))));
 
         // 6. IO 队列
         self.iojqs = vec![
@@ -217,10 +260,29 @@ impl FuseClients {
         ];
 
         // 7. client 初始化
-        self.client = Some(Arc::new(Client)); // TODO: 参数
-        self.mgmtd_client = Some(Arc::new(MgmtdClientForClient)); // TODO: 参数
-        self.storage_client = Some(Arc::new(StorageClient)); // TODO: 参数
-        self.meta_client = Some(Arc::new(MetaClient)); // TODO: 参数
+        self.client = Some(Arc::new(Client::new(config.client_config.clone())));
+        if let Some(client) = &self.client {
+            // client.start().await?; // 如果是异步启动
+            // ctx_creator = ... // 你可以用闭包或函数指针
+        }
+        self.mgmtd_client = Some(Arc::new(MgmtdClientForClient::new(
+            config.cluster_id.clone(),
+            /* stub_factory */ None, // 你可以实现 stub_factory 逻辑
+            config.mgmtd_config.clone(),
+        )));
+        self.storage_client = Some(Arc::new(StorageClient::new(
+            /* client_id */ 0, // 你可以生成 client_id
+            config.storage_config.clone(),
+            self.mgmtd_client.as_ref().unwrap().clone(),
+        )));
+        self.meta_client = Some(Arc::new(MetaClient::new(
+            /* client_id */ 0,
+            config.meta_config.clone(),
+            /* stub_factory */ None,
+            self.mgmtd_client.as_ref().unwrap().clone(),
+            self.storage_client.as_ref().unwrap().clone(),
+            true, // dynStripe
+        )));
 
         // 8. 启动 worker、watch、periodic_sync 等异步任务
         self.start_io_workers(self.max_threads as usize);
@@ -229,9 +291,57 @@ impl FuseClients {
         true
     }
 
-    pub fn stop(&mut self) {
-        // TODO: 资源释放、线程停止等
+    pub async fn stop(&mut self) {
+    // 1. 停止并释放 notifyInvalExec 线程池
+    if let Some(exec) = self.notify_inval_exec.take() {
+        // 如果你有自定义线程池的 stop 方法，可以调用
+        // exec.stop().await;
+        drop(exec);
     }
+
+    // 2. 释放 onFuseConfigUpdated 回调（如果有）
+    // Rust 通常用 Option<Arc<...>> 或 Option<Box<...>>，直接 take/drop 即可
+    // self.on_fuse_config_updated = None; // 如果有类似字段
+
+    // 3. 请求取消所有异步任务
+    self.cancel_ios.store(true, std::sync::atomic::Ordering::Relaxed);
+
+    // 4. 停止所有 watcher/worker 线程
+    for handle in self.io_watches.drain(..) {
+        handle.abort(); // 立即终止任务
+        // 或者：let _ = handle.await; // 等待任务自然结束
+    }
+
+    // 5. 停止并释放 periodicSyncRunner、periodicSyncWorker
+    if let Some(runner) = self.periodic_sync_runner.take() {
+        // 如果有 async 停止方法可以调用 runner.stop_all().await;
+        drop(runner);
+    }
+    if let Some(worker) = self.periodic_sync_worker.take() {
+        // 如果有 async 停止方法可以调用 worker.stop_and_join().await;
+        drop(worker);
+    }
+
+    // 6. 停止并释放 metaClient、storageClient、mgmtdClient、client
+    if let Some(meta) = self.meta_client.take() {
+        // 如果有 async 停止方法可以调用 meta.stop().await;
+        drop(meta);
+    }
+    if let Some(storage) = self.storage_client.take() {
+        // 如果有 async 停止方法可以调用 storage.stop().await;
+        drop(storage);
+    }
+    if let Some(mgmtd) = self.mgmtd_client.take() {
+        // 如果有 async 停止方法可以调用 mgmtd.stop().await;
+        drop(mgmtd);
+    }
+    if let Some(client) = self.client.take() {
+        // 如果有 async 停止方法可以调用 client.stop_and_join().await;
+        drop(client);
+    }
+
+    println!("FuseClients stopped.");
+}
 
     pub fn start_io_workers(&mut self, n: usize) {
         let running = self.running.clone();
@@ -263,4 +373,57 @@ impl FuseClients {
     }
 }
 
-// 你可以继续补充 FFI 导出、异步任务、字段类型细化等
+pub async fn io_ring_worker(
+    mut queues: Vec<mpsc::Receiver<IoRingJob>>,
+    worker_id: usize,
+    running: Arc<std::sync::atomic::AtomicBool>,
+) {
+    while running.load(Ordering::Relaxed) {
+        // 优先级从高到低依次 select
+        select! {
+            Some(job) = queues[0].recv() => {
+                println!("[Worker {}] 高优先级处理 job {:?}", worker_id, job);
+            }
+            Some(job) = queues[1].recv() => {
+                println!("[Worker {}] 中优先级处理 job {:?}", worker_id, job);
+            }
+            Some(job) = queues[2].recv() => {
+                println!("[Worker {}] 低优先级处理 job {:?}", worker_id, job);
+            }
+            else => {
+                // 所有队列都空，休眠一会
+                tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+            }
+        }
+    }
+    println!("[Worker {}] 退出", worker_id);
+}
+
+#[tokio::main]
+async fn main() {
+    let prio_count = 3;
+    let mut queue = MultiPrioQueue::new(100, prio_count);
+    let running = Arc::new(std::sync::atomic::AtomicBool::new(true));
+
+    // 启动 worker
+    let mut receivers = vec![];
+    for i in 0..prio_count {
+        receivers.push(queue.receiver(i));
+    }
+    let running_clone = running.clone();
+    tokio::spawn(io_ring_worker(
+        receivers.into_iter().map(|r| r.clone()).collect(),
+        0,
+        running_clone,
+    ));
+
+    // 投递不同优先级任务
+    for i in 0..10 {
+        let prio = i % 3;
+        queue.sender(prio).send(IoRingJob { id: i, prio }).await.unwrap();
+    }
+
+    tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+    running.store(false, Ordering::Relaxed);
+    tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+}
