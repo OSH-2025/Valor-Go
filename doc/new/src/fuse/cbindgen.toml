@@ -1,0 +1,4 @@
+language = "C"
+
+[export]
+include = ["hf3fs_fuse_run", "hf3fs_fuse_init", "hf3fs_fuse_cleanup", "hf3fs_fuse_get_config", "hf3fs_fuse_set_user_config"] 
