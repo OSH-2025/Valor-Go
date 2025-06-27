@@ -11,25 +11,11 @@ extern "C" {
 namespace hf3fs::fuse {
 namespace {
 monitor::ValueRecorder dirtyInodesCnt("fuse.dirty_inodes");
-
-Result<Void> establishClientSession(client::IMgmtdClientForClient &mgmtdClient) {
-  return folly::coro::blockingWait([&]() -> CoTryTask<void> {
-    auto retryInterval = std::chrono::milliseconds(10);
-    constexpr auto maxRetryInterval = std::chrono::milliseconds(1000);
-    Result<Void> res = Void{};
-    for (int i = 0; i < 40; ++i) {
-      res = co_await mgmtdClient.extendClientSession();
-      if (res) break;
-      XLOGF(CRITICAL, "Try to establish client session failed: {}\nretryCount: {}", res.error(), i);
-      co_await folly::coro::sleep(retryInterval);
-      retryInterval = std::min(2 * retryInterval, maxRetryInterval);
-    }
-    co_return res;
-  }());
-}
 }  // namespace
 
-FuseClients::FuseClients() {
+FuseClients::FuseClients()
+    : iovs("") // 显式初始化IovTable，传递空字符串作为mountName
+{
     rust_ptr_ = hf3fs_fuse_clients_new();
     if (!rust_ptr_) throw std::runtime_error("Failed to create Rust FuseClients");
 }
@@ -45,6 +31,10 @@ Result<Void> FuseClients::init(const flat::AppInfo &appInfo,
                                const String &mountPoint,
                                const String &tokenFile,
                                FuseConfig &fuseConfig) {
+    (void)appInfo;
+    (void)mountPoint;
+    (void)tokenFile;
+    (void)fuseConfig;
     // 这里只做FFI转发，参数适配可根据需要扩展
     // 目前Rust端init只接收FuseAppConfig和FuseApplication指针，
     // 你可以根据需要扩展FFI接口

@@ -36,7 +36,7 @@ hf3fs::Result<Void> PioV::addRead(size_t idx,
                                   storage::client::IOBuffer &memh) {
     if (!rust_ptr_) return makeError(StatusCode::kInvalidArg, "PioV not initialized");
     int ret = hf3fs_piov_add_read(rust_ptr_, idx, &inode, track, off, len, buf, &memh);
-    if (ret != 0) return makeError(StatusCode::kNotSupported, "addRead failed");
+    if (ret != 0) return makeError(StatusCode::kNotImplemented, "addRead failed");
     return Void{};
 }
 
@@ -49,21 +49,21 @@ hf3fs::Result<Void> PioV::addWrite(size_t idx,
                                    storage::client::IOBuffer &memh) {
     if (!rust_ptr_) return makeError(StatusCode::kInvalidArg, "PioV not initialized");
     int ret = hf3fs_piov_add_write(rust_ptr_, idx, &inode, track, off, len, buf, &memh);
-    if (ret != 0) return makeError(StatusCode::kNotSupported, "addWrite failed");
+    if (ret != 0) return makeError(StatusCode::kNotImplemented, "addWrite failed");
     return Void{};
 }
 
 CoTryTask<void> PioV::executeRead(const UserInfo &userInfo, const storage::client::ReadOptions &options) {
     if (!rust_ptr_) co_return makeError(StatusCode::kInvalidArg, "PioV not initialized");
     int ret = hf3fs_piov_execute_read(rust_ptr_, &userInfo, &options);
-    if (ret != 0) co_return makeError(StatusCode::kNotSupported, "executeRead failed");
+    if (ret != 0) co_return makeError(StatusCode::kNotImplemented, "executeRead failed");
     co_return Void{};
 }
 
 CoTryTask<void> PioV::executeWrite(const UserInfo &userInfo, const storage::client::WriteOptions &options) {
     if (!rust_ptr_) co_return makeError(StatusCode::kInvalidArg, "PioV not initialized");
     int ret = hf3fs_piov_execute_write(rust_ptr_, &userInfo, &options);
-    if (ret != 0) co_return makeError(StatusCode::kNotSupported, "executeWrite failed");
+    if (ret != 0) co_return makeError(StatusCode::kNotImplemented, "executeWrite failed");
     co_return Void{};
 }
 

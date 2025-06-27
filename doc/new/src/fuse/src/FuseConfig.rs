@@ -4,7 +4,7 @@ use std::time::Duration;
 use std::fs;
 use serde::{Serialize, Deserialize};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Deserialize)]
 pub struct FuseConfig {
     pub cluster_id: String,
     pub token_file: String,
@@ -56,7 +56,7 @@ pub struct FuseConfig {
     pub periodic_sync: PeriodSync,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Deserialize)]
 pub struct PeriodSync {
     pub enable: bool,
     pub interval: Duration,

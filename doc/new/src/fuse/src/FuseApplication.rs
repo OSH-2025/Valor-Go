@@ -1,4 +1,4 @@
-use crate::fuse_app_config::KeyValue;
+use crate::FuseAppConfig::KeyValue;
 
 
 use std::collections::HashMap;

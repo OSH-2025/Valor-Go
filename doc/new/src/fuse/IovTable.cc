@@ -359,42 +359,4 @@ IovTable::~IovTable() {
     }
 }
 
-Result<std::pair<meta::Inode, std::shared_ptr<lib::ShmBuf>>> IovTable::addIov(const char *key,
-                                                                              const Path &shmPath,
-                                                                              pid_t /*pid*/,
-                                                                              const meta::UserInfo &ui,
-                                                                              folly::Executor::KeepAlive<> /*exec*/,
-                                                                              storage::client::StorageClient &/*sc*/) {
-    if (!rust_ptr_) return makeError(StatusCode::kInvalidArg, "IovTable not initialized");
-    void* shmbuf_ptr = hf3fs_iovtable_add_iov(rust_ptr_, key, shmPath.c_str(), ui.uid.toUnderType(), ui.gid.toUnderType());
-    if (!shmbuf_ptr) return makeError(StatusCode::kNotFound, "addIov failed");
-    // TODO: 需要将shmbuf_ptr转换为C++ std::shared_ptr<lib::ShmBuf>
-    return makeError(StatusCode::kNotSupported, "shmbuf glue未实现");
-}
-
-Result<std::shared_ptr<lib::ShmBuf>> IovTable::rmIov(const char *key, const meta::UserInfo &ui) {
-    if (!rust_ptr_) return makeError(StatusCode::kInvalidArg, "IovTable not initialized");
-    void* shmbuf_ptr = hf3fs_iovtable_rm_iov(rust_ptr_, key, ui.uid.toUnderType(), ui.gid.toUnderType());
-    if (!shmbuf_ptr) return makeError(StatusCode::kNotFound, "rmIov failed");
-    // TODO: 需要将shmbuf_ptr转换为C++ std::shared_ptr<lib::ShmBuf>
-    return makeError(StatusCode::kNotSupported, "shmbuf glue未实现");
-}
-
-Result<meta::Inode> IovTable::lookupIov(const char *key, const meta::UserInfo &ui) {
-    if (!rust_ptr_) return makeError(StatusCode::kInvalidArg, "IovTable not initialized");
-    void* shmbuf_ptr = hf3fs_iovtable_lookup_iov(rust_ptr_, key, ui.uid.toUnderType(), ui.gid.toUnderType());
-    if (!shmbuf_ptr) return makeError(StatusCode::kNotFound, "lookupIov failed");
-    // TODO: 需要将shmbuf_ptr转换为meta::Inode
-    return makeError(StatusCode::kNotSupported, "shmbuf glue未实现");
-}
-
-std::pair<std::shared_ptr<std::vector<meta::DirEntry>>, std::shared_ptr<std::vector<std::optional<meta::Inode>>>>
-IovTable::listIovs(const meta::UserInfo &ui) {
-    if (!rust_ptr_) return {nullptr, nullptr};
-    size_t out_len = 0;
-    void** shmbuf_ptrs = hf3fs_iovtable_list_iovs(rust_ptr_, ui.uid.toUnderType(), ui.gid.toUnderType(), &out_len);
-    // TODO: 需要将shmbuf_ptrs转换为C++ std::vector<...>
-    return {nullptr, nullptr};
-}
-
 }  // namespace hf3fs::fuse

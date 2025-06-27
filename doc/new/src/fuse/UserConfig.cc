@@ -33,26 +33,26 @@ void UserConfig::init(FuseConfig &config) {
 }
 
 Result<meta::Inode> UserConfig::setConfig(const char *key, const char *val, const meta::UserInfo &ui) {
-    if (!rust_ptr_) return makeError(StatusCode::kInvalidArg, "UserConfig not initialized");
+    if (!rust_ptr_) return makeError(StatusCode::kNotImplemented, "UserConfig not initialized");
     meta::Inode out_inode;
     int ret = hf3fs_user_config_set_config(rust_ptr_, key, val, &ui, &out_inode);
-    if (ret != 0) return makeError(StatusCode::kNotSupported, "setConfig failed");
+    if (ret != 0) return makeError(StatusCode::kNotImplemented, "setConfig failed");
     return out_inode;
 }
 
 Result<meta::Inode> UserConfig::lookupConfig(const char *key, const meta::UserInfo &ui) {
-    if (!rust_ptr_) return makeError(StatusCode::kInvalidArg, "UserConfig not initialized");
+    if (!rust_ptr_) return makeError(StatusCode::kNotImplemented, "UserConfig not initialized");
     meta::Inode out_inode;
     int ret = hf3fs_user_config_lookup_config(rust_ptr_, key, &ui, &out_inode);
-    if (ret != 0) return makeError(StatusCode::kNotSupported, "lookupConfig failed");
+    if (ret != 0) return makeError(StatusCode::kNotImplemented, "lookupConfig failed");
     return out_inode;
 }
 
 Result<meta::Inode> UserConfig::statConfig(meta::InodeId iid, const meta::UserInfo &ui) {
-    if (!rust_ptr_) return makeError(StatusCode::kInvalidArg, "UserConfig not initialized");
+    if (!rust_ptr_) return makeError(StatusCode::kNotImplemented, "UserConfig not initialized");
     meta::Inode out_inode;
     int ret = hf3fs_user_config_stat_config(rust_ptr_, iid.u64(), &ui, &out_inode);
-    if (ret != 0) return makeError(StatusCode::kNotSupported, "statConfig failed");
+    if (ret != 0) return makeError(StatusCode::kNotImplemented, "statConfig failed");
     return out_inode;
 }
 
@@ -61,6 +61,7 @@ UserConfig::listConfig(const meta::UserInfo &ui) {
     if (!rust_ptr_) return {nullptr, nullptr};
     size_t out_len = 0;
     void* result = hf3fs_user_config_list_config(rust_ptr_, &ui, &out_len);
+    (void)result;
     // TODO: 需要将result转换为C++ std::vector<...>
     return {nullptr, nullptr};
 }

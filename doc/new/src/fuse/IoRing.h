@@ -2,6 +2,17 @@
 
 #include <cstdint>
 #include <semaphore.h>
+#include <atomic>
+#include <deque>
+#include <set>
+#include <mutex>
+#include <string>
+#include <vector>
+#include <memory>
+#include <unordered_map>
+#include <functional>
+#include <limits>
+#include <optional>
 
 #include "IovTable.h"
 #include "UserConfig.h"
@@ -11,6 +22,10 @@
 #include "common/utils/Uuid.h"
 #include "fbs/meta/Schema.h"
 #include "lib/common/Shm.h"
+
+namespace hf3fs {
+struct AvailSlots; // forward declaration for AvailSlots
+}
 
 namespace hf3fs::fuse {
 struct RcInode;
@@ -75,9 +90,28 @@ class IoRing : public std::enable_shared_from_this<IoRing> {
 
   // the shm arg is used to keep it from being destroyed when the iov link is removed
   IoRing(const std::string& name, size_t entries, size_t io_depth, size_t priority, uint64_t timeout_ms, bool for_read);
+  IoRing(std::shared_ptr<lib::ShmBuf> shm,
+         std::string_view name,
+         const meta::UserInfo& ui,
+         bool forRead,
+         uint8_t* buf,
+         size_t size,
+         int ioDepth,
+         int priority,
+         Duration timeout,
+         uint64_t flags);
+  IoRing(std::shared_ptr<lib::ShmBuf> shm,
+         const char* name,
+         hf3fs::meta::UserInfo ui,
+         bool forRead,
+         uint8_t* buf,
+         size_t size,
+         int ioDepth,
+         int priority,
+         hf3fs::Duration timeout,
+         uint64_t flags,
+         bool extra);
   ~IoRing();
-
-  void* rust_ptr_ = nullptr;
 
   bool addSqe(const IoArgs& args);
   std::vector<IoRingJob> jobsToProc(int maxJobs);
@@ -94,20 +128,7 @@ class IoRing : public std::enable_shared_from_this<IoRing> {
       std::function<void(std::vector<Result<lib::ShmBufForIO>> &, const IoArgs *, const IoSqe *, int)> &&lookupBufs);
 
  public:
-  bool addSqe(int idx, const void *userdata) {
-    auto h = sqeHead.load();
-    if ((h + 1) % entries == sqeTail.load()) {
-      return false;
-    }
-
-    auto &sqe = sqeSection[h];
-    sqe.index = idx;
-    sqe.userdata = userdata;
-
-    sqeHead.store((h + 1) % entries);
-
-    return true;
-  }
+  bool addSqe(int idx, const void *userdata);
   bool sqeTailAfter(int a, int b) {
     auto h = sqeHead.load();
     if (a == h) {  // caught up with head, must be the last
@@ -122,6 +143,7 @@ class IoRing : public std::enable_shared_from_this<IoRing> {
   }
 
  public:
+  // --- public data members (for external access) ---
   std::string name;
   std::string mountName;
   int entries;
@@ -129,25 +151,22 @@ class IoRing : public std::enable_shared_from_this<IoRing> {
   int priority;
   Duration timeout;
 
- private:
-  int32_t *sqeHead_;
-  int32_t *sqeTail_;
-  int32_t *cqeHead_;
-  int32_t *cqeTail_;
-  std::optional<SteadyTime> lastCheck_;
+  IoArgs *ringSection = nullptr;
+  IoCqe *cqeSection = nullptr;
+  IoSqe *sqeSection = nullptr;
 
- public:
-  std::atomic_ref<int32_t> sqeHead;
-  std::atomic_ref<int32_t> sqeTail;
-  std::atomic_ref<int32_t> cqeHead;
-  std::atomic_ref<int32_t> cqeTail;
-  IoArgs *ringSection;
-  IoCqe *cqeSection;
-  IoSqe *sqeSection;
+  int32_t sqeHeadValue = 0;
+  int32_t sqeTailValue = 0;
+  std::atomic_ref<int32_t> sqeHead{sqeHeadValue};
+  std::atomic_ref<int32_t> sqeTail{sqeTailValue};
+  int32_t cqeHeadValue = 0;
+  int32_t cqeTailValue = 0;
+  std::atomic_ref<int32_t> cqeHead{cqeHeadValue};
+  std::atomic_ref<int32_t> cqeTail{cqeTailValue};
+
   std::unique_ptr<sem_t, std::function<void(sem_t *)>> cqeSem{nullptr, [](sem_t *p) { sem_destroy(p); }};
 
- public:
-  AvailSlots slots;
+  hf3fs::AvailSlots slots;
 
  private:
   int sqeCount() const { return (sqeHead.load() + entries - sqeProcTail_) % entries; }
@@ -177,7 +196,7 @@ class IoRing : public std::enable_shared_from_this<IoRing> {
   std::deque<int> sqeProcTails_;  // tails claimed and processing
   std::set<int> sqeDoneTails_;    // tails done processing
 
- public:
+ private:
   void* rust_ptr_ = nullptr;
 };
 

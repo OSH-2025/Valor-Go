@@ -23,6 +23,9 @@ use tokio::select;
 
 // 你需要根据实际项目把上面这些use补全
 
+pub struct BackgroundRunner;
+pub struct CoroutinesPool<T>(std::marker::PhantomData<T>);
+
 #[derive(Debug)]
 pub struct InodeWriteBuf {
     pub buf: Vec<u8>,
@@ -68,18 +71,40 @@ pub struct DirEntryInodeVector {
 
 // 占位类型
 pub struct Client;
+impl Client {
+    pub fn new(_config: Option<usize>) -> Self { Self }
+}
 pub struct MgmtdClientForClient;
+impl MgmtdClientForClient {
+    pub fn new(_cluster_id: String, _mgmtd_config: Option<usize>) -> Self { Self }
+}
 pub struct StorageClient;
+impl StorageClient {
+    pub fn new(_storage_config: Option<usize>) -> Self { Self }
+}
 pub struct MetaClient;
+impl MetaClient {
+    pub fn new(_meta_config: Option<usize>) -> Self { Self }
+}
 pub struct RDMABufPool;
-pub struct BackgroundRunner;
-pub struct CoroutinesPool<T>(std::marker::PhantomData<T>);
-pub struct FuseConfig;
+impl RDMABufPool {
+    pub fn create(_max_buf_size: usize, _pool_size: usize) -> Self { Self }
+}
 pub struct UserConfig;
+impl UserConfig {
+    pub fn new(_config: &FuseConfig) -> Self { Self }
+}
 pub struct IovTable;
+impl IovTable {
+    pub fn new(_iov_limit: usize) -> Self { Self }
+}
 pub struct IoRingTable;
+impl IoRingTable {
+    pub fn new(_iov_limit: usize) -> Self { Self }
+}
+#[derive(Debug, Clone)]
 pub struct IoRingJob {
-    pub id: u64,
+    pub id: usize,
     pub prio: usize, // 0:高 1:中 2:低
 }
 pub struct BoundedQueue<T>(std::marker::PhantomData<T>);
@@ -109,8 +134,8 @@ impl MultiPrioQueue {
         self.senders[prio].clone()
     }
 
-    pub fn receiver(&mut self, prio: usize) -> &mut mpsc::Receiver<IoRingJob> {
-        &mut self.receivers[prio]
+    pub fn take_receiver(&mut self, prio: usize) -> mpsc::Receiver<IoRingJob> {
+        self.receivers.remove(prio)
     }
 }
 
@@ -130,7 +155,7 @@ pub struct FuseClients {
     pub max_threads: i32,
     pub enable_writeback_cache: bool,
 
-    pub inodes: Arc<Mutex<HashMap<u64, Arc<()>>>>, // TODO: RcInode
+    pub inodes: Arc<Mutex<HashMap<u64, Arc<RcInode>>>>, // 使用 RcInode
     pub readdirplus_results: Arc<Mutex<HashMap<u64, ()>>>, // TODO: DirEntryInodeVector
     pub dir_handle: Arc<AtomicU64>,
     pub buf_pool: Option<Arc<RDMABufPool>>,
@@ -227,7 +252,7 @@ impl FuseClients {
         self.enable_writeback_cache = config.enable_writeback_cache;
         self.memset_before_read.store(config.memset_before_read, Ordering::Relaxed);
         self.max_idle_threads = config.max_idle_threads;
-        let logical_cores = num_cpus::get();
+        let logical_cores = 1; // TODO: 可用 num_cpus::get()，需添加依赖
         self.max_threads = if logical_cores != 0 {
             std::cmp::min(config.max_threads, (logical_cores as i32 + 1) / 2)
         } else {
@@ -235,20 +260,12 @@ impl FuseClients {
         };
 
         // 5. buf_pool、iovs、iors、user_config 初始化
-        self.buf_pool = Some(Arc::new(RDMABufPool::create(
-            config.io_bufs.max_buf_size,
-            config.rdma_buf_pool_size,
-        )));
+        self.buf_pool = Some(Arc::new(RDMABufPool::create(1024 * 1024, config.rdma_buf_pool_size)));
 
         let mountpoint = self.fuse_remount_pref.as_ref().unwrap_or(&self.fuse_mountpoint);
-        self.iovs = Some(Arc::new(IovTable::new(
-            mountpoint,
-            config.iov_limit,
-        )));
+        self.iovs = Some(Arc::new(IovTable::new(config.iov_limit)));
 
-        self.iors = Some(Arc::new(IoRingTable::new(
-            config.iov_limit,
-        )));
+        self.iors = Some(Arc::new(IoRingTable::new(config.iov_limit)));
 
         self.user_config = Some(Arc::new(Mutex::new(UserConfig::new(config))));
 
@@ -260,29 +277,17 @@ impl FuseClients {
         ];
 
         // 7. client 初始化
-        self.client = Some(Arc::new(Client::new(config.client_config.clone())));
+        self.client = Some(Arc::new(Client::new(None)));
         if let Some(client) = &self.client {
             // client.start().await?; // 如果是异步启动
             // ctx_creator = ... // 你可以用闭包或函数指针
         }
         self.mgmtd_client = Some(Arc::new(MgmtdClientForClient::new(
             config.cluster_id.clone(),
-            /* stub_factory */ None, // 你可以实现 stub_factory 逻辑
-            config.mgmtd_config.clone(),
+            None,
         )));
-        self.storage_client = Some(Arc::new(StorageClient::new(
-            /* client_id */ 0, // 你可以生成 client_id
-            config.storage_config.clone(),
-            self.mgmtd_client.as_ref().unwrap().clone(),
-        )));
-        self.meta_client = Some(Arc::new(MetaClient::new(
-            /* client_id */ 0,
-            config.meta_config.clone(),
-            /* stub_factory */ None,
-            self.mgmtd_client.as_ref().unwrap().clone(),
-            self.storage_client.as_ref().unwrap().clone(),
-            true, // dynStripe
-        )));
+        self.storage_client = Some(Arc::new(StorageClient::new(None)));
+        self.meta_client = Some(Arc::new(MetaClient::new(None)));
 
         // 8. 启动 worker、watch、periodic_sync 等异步任务
         self.start_io_workers(self.max_threads as usize);
@@ -374,20 +379,22 @@ impl FuseClients {
 }
 
 pub async fn io_ring_worker(
-    mut queues: Vec<mpsc::Receiver<IoRingJob>>,
+    mut queue0: mpsc::Receiver<IoRingJob>,
+    mut queue1: mpsc::Receiver<IoRingJob>,
+    mut queue2: mpsc::Receiver<IoRingJob>,
     worker_id: usize,
     running: Arc<std::sync::atomic::AtomicBool>,
 ) {
     while running.load(Ordering::Relaxed) {
         // 优先级从高到低依次 select
         select! {
-            Some(job) = queues[0].recv() => {
+            Some(job) = queue0.recv() => {
                 println!("[Worker {}] 高优先级处理 job {:?}", worker_id, job);
             }
-            Some(job) = queues[1].recv() => {
+            Some(job) = queue1.recv() => {
                 println!("[Worker {}] 中优先级处理 job {:?}", worker_id, job);
             }
-            Some(job) = queues[2].recv() => {
+            Some(job) = queue2.recv() => {
                 println!("[Worker {}] 低优先级处理 job {:?}", worker_id, job);
             }
             else => {
@@ -406,13 +413,14 @@ async fn main() {
     let running = Arc::new(std::sync::atomic::AtomicBool::new(true));
 
     // 启动 worker
-    let mut receivers = vec![];
-    for i in 0..prio_count {
-        receivers.push(queue.receiver(i));
-    }
+    let queue0 = queue.take_receiver(0);
+    let queue1 = queue.take_receiver(1);
+    let queue2 = queue.take_receiver(2);
     let running_clone = running.clone();
     tokio::spawn(io_ring_worker(
-        receivers.into_iter().map(|r| r.clone()).collect(),
+        queue0,
+        queue1,
+        queue2,
         0,
         running_clone,
     ));

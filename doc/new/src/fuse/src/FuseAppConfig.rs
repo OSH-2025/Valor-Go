@@ -3,7 +3,7 @@
 use std::string::String;
 use std::vec::Vec;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Deserialize)]
 pub struct KeyValue {
     pub key: String,
     pub value: String,
@@ -18,7 +18,11 @@ pub trait ConfigBase {
     fn init(&mut self, file_path: &str, dump: bool, updates: Vec<KeyValue>) -> Result<(), String>;
 }
 
-#[derive(Debug, Clone)]
+pub trait ApplicationBaseTrait {
+    fn init_config(&mut self, file_path: &str, dump: bool, updates: Vec<KeyValue>) -> Result<(), String>;
+}
+
+#[derive(Debug, Clone, serde::Deserialize)]
 pub struct FuseAppConfig {
     pub token: String,
     pub mountpoint: String,
@@ -47,11 +51,7 @@ pub struct ApplicationBase;
 use std::fs;
 
 impl ApplicationBase {
-    pub fn load_config(
-        config: &mut FuseAppConfig,
-        file_path: &str,
-        updates: Vec<KeyValue>,
-    ) -> Result<(), String> {
+    pub fn init_config(config: &mut FuseAppConfig, file_path: &str, dump: bool, updates: Vec<KeyValue>) -> Result<(), String> {
         let content = fs::read_to_string(file_path)
             .map_err(|e| format!("读取配置文件失败: {}", e))?;
         let mut loaded: FuseAppConfig = toml::from_str(&content)
@@ -66,6 +66,10 @@ impl ApplicationBase {
             }
         }
         *config = loaded;
+        if dump {
+            println!("{:#?}", config);
+            std::process::exit(0);
+        }
         Ok(())
     }
 }

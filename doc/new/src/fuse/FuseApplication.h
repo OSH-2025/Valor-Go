@@ -48,9 +48,6 @@ class FuseApplication : public ApplicationBase {
   Result<Void> initServer();
 
   Result<Void> startServer();
-
-  struct Impl;
-  std::unique_ptr<Impl> impl_;
 };
 }  // namespace hf3fs::fuse
 

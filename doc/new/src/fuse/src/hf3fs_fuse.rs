@@ -33,7 +33,7 @@ fn main() {
         let mut d = FuseClients::new();
         let app_config = FuseAppConfig::new();
         let app = FuseApplication::new();
-        if !d.init(&app_config, &app) {
+        if !d.init(&hf3fs_config, "/mnt", "token.txt") {
             eprintln!("[hf3fs_fuse] Init fuse clients failed");
             return;
         }

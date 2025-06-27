@@ -1,5 +1,7 @@
 #include "FuseConfigFetcher.h"
 #include <stdexcept>
+#include "common/net/Client.h"
+#include "client/mgmtd/MgmtdClient.h"
 
 extern "C" {
     void* hf3fs_fuse_config_fetcher_new(const char* mgmtd_service_url);
@@ -9,7 +11,9 @@ extern "C" {
 
 namespace hf3fs::fuse {
 
-FuseConfigFetcher::FuseConfigFetcher() {
+FuseConfigFetcher::FuseConfigFetcher()
+    : core::launcher::MgmtdClientFetcher("", net::Client::Config(), client::MgmtdClient::Config())
+{
     // 这里可以传递mgmtd_service_url，暂用空字符串
     rust_ptr_ = hf3fs_fuse_config_fetcher_new("");
     if (!rust_ptr_) throw std::runtime_error("Failed to create Rust FuseConfigFetcher");

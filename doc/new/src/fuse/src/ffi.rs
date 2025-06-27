@@ -13,13 +13,14 @@ use crate::fuse_main_loop_rs;
 use crate::FuseAppConfig::ConfigBase;
 use crate::FuseAppConfig::FuseAppConfig;
 use crate::FuseApplication::FuseApplication;
-use crate::FuseAppConfig::KeyValue;
+use crate::FuseAppConfig::KeyValue as AppKeyValue;
 use crate::FuseConfigFetcher::FuseConfigFetcher;
-use crate::FuseLauncherConfig::{FuseLauncherConfig, KeyValue};
+use crate::FuseLauncherConfig::{FuseLauncherConfig, KeyValue as LauncherKeyValue};
 use crate::IoRing::{IoRing, IoArgs, IoSqe, IoCqe};
 use crate::IovTable::{IovTable, UserInfo as IovUserInfo};
 use crate::PioV::PioV;
 use crate::UserConfig::UserConfig;
+use crate::FuseApplication::ApplicationBase;
 
 #[repr(C)]
 pub struct FfiKeyValue {
@@ -61,7 +62,7 @@ pub extern "C" fn hf3fs_fuse_init(
     let mut clients: FuseClients = Default::default();
     let app_config = FuseAppConfig::new();
     let app = FuseApplication::new();
-    if !clients.init(&app_config, &app) {
+    if !clients.init(&config, &mountpoint_str, &token_file_str) {
         return -3;
     }
 
@@ -146,7 +147,7 @@ pub extern "C" fn hf3fs_fuse_app_config_init(
             }
             let key = unsafe { CStr::from_ptr(ffi_kv.key).to_string_lossy().to_string() };
             let value = unsafe { CStr::from_ptr(ffi_kv.value).to_string_lossy().to_string() };
-            updates_vec.push(KeyValue::new(key, value));
+            updates_vec.push(AppKeyValue::new(key, value));
         }
     }
     let config = unsafe { &mut *config };
@@ -253,14 +254,18 @@ pub extern "C" fn hf3fs_fuse_clients_drop(ptr: *mut FuseClients) {
 #[no_mangle]
 pub extern "C" fn hf3fs_fuse_clients_init(
     clients: *mut FuseClients,
-    config: *const FuseAppConfig,
-    app: *const FuseApplication,
+    config: *const FuseConfig,
+    mount_point: *const c_char,
+    token_file: *const c_char,
 ) -> bool {
-    if clients.is_null() || config.is_null() || app.is_null() { return false; }
+    if clients.is_null() || config.is_null() || mount_point.is_null() || token_file.is_null() {
+        return false;
+    }
     let clients = unsafe { &mut *clients };
     let config = unsafe { &*config };
-    let app = unsafe { &*app };
-    clients.init(config, app)
+    let mount_point = unsafe { CStr::from_ptr(mount_point).to_string_lossy() };
+    let token_file = unsafe { CStr::from_ptr(token_file).to_string_lossy() };
+    clients.init(config, &mount_point, &token_file)
 }
 
 #[no_mangle]
@@ -315,7 +320,7 @@ pub extern "C" fn hf3fs_fuse_launcher_config_init(
             }
             let key = unsafe { CStr::from_ptr(ffi_kv.key).to_string_lossy().to_string() };
             let value = unsafe { CStr::from_ptr(ffi_kv.value).to_string_lossy().to_string() };
-            updates_vec.push(KeyValue { key, value });
+            updates_vec.push(LauncherKeyValue { key, value });
         }
     }
     let file_path = unsafe { CStr::from_ptr(file_path).to_string_lossy().to_string() };
