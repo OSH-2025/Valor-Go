@@ -38,13 +38,17 @@
 | 正式构建 |    2025.06.07 - 2025.06.24    |                                          5.26日团队第十三次会议，小组成员分别交流了自己期末周的安排，讨论了Lab4的分工以及大作业的下一步计划                                          |                              吕祖灿：完成Lab4并且本地部署3FS <br> 杨奕麟：云端部署3FS并测试已修改的代码 `<br><br>` 任壮壮，梁修宁，王淇辉：继续重构代码                              |
 | 最后冲刺 | 2025.06.25| 完成基本的改写工作，将各自改写组合到一起| 全体在自习室开展工作|
 | 最后冲刺 | 2025.06.26| 完成基本的部署和测试工作| 全体在自习室开展工作|
+| 最后冲刺 | 2025.06.27| 完成所有部署和测试工作| 全体在自习室开展工作|
 
 <h3 align="left">与我们联系:</h3>
-<p align="left">Qihui Wang: PB23111637@mail.ustc.edu.cn</p>
-<p align="left">Zhuangzhuang Ren: rzz18856919896@mail.ustc.edu.cn</p>
 <p align="left">Yilin Yang: yangyiln@mail.ustc.edu.cn</p>
+<p align="left">Zhuangzhuang Ren: rzz18856919896@mail.ustc.edu.cn</p>
+<p align="left">Qihui Wang: PB23111637@mail.ustc.edu.cn</p>
 <p align="left">Xiuning Liang: rzx0420@mail.ustc.edu.cn</p>
 <p align="left">Zucan Lv: zucanlv@mail.ustc.edu.cn</p>
 
 <h3 align="left">语言与工具:</h3>
-<p align="left">  <a href="https://www.linux.org/" target="_blank" rel="noreferrer"> <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/linux/linux-original.svg" alt="linux" width="40" height="40"/> </a> <a href="https://git-scm.com/" target="_blank" rel="noreferrer"> <img src="https://www.vectorlogo.zone/logos/git-scm/git-scm-icon.svg" alt="git" width="40" height="40"/>
+<p align="left">  <a href="https://www.rust-lang.org/" target="_blank" rel="noreferrer">
+  <img src="https://www.vectorlogo.zone/logos/rust-lang/rust-lang-icon.svg" alt="Rust" width="40" height="40" />
+</a> <a href="https://www.linux.org/" target="_blank" rel="noreferrer"> <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/linux/linux-original.svg" alt="linux" width="40" height="40"/> </a> <a href="https://git-scm.com/" target="_blank" rel="noreferrer"> <img src="https://www.vectorlogo.zone/logos/git-scm/git-scm-icon.svg" alt="git" width="40" height="40"/> </p>
+

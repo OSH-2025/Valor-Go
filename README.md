@@ -37,13 +37,16 @@
 | Code Task| 2025.06.07 - 2025.06.24| Thirteenth team meeting conducted on June 7th. Everyone in team shares himself's schedule in final weeks. Then we discuss how to implement Lab4 and further schedule of our project. | Zucan: implement Lab4 and deploy 3FS locally.<br> Yilin: deploy 3FS in the cloud and test current code. <br><br> Zhuangzhuang, Xiuning and Qihui: refactor the code continuely.|
 | Final spurt| 2025.06.25| Complete basic refactoring|Everyone works together in a study room.| 
 | Final spurt| 2025.06.26| Complete universal deployment|Everyone works together in a study room|
+| Final spurt| 2025.06.27| Complete universal deployment and functional testing|Everyone works together in a study room|
 <h3 align="left">Connect with us:</h3>
-<p align="left">Qihui Wang: PB23111637@mail.ustc.edu.cn</p>
-<p align="left">Zhuangzhuang Ren: rzz18856919896@mail.ustc.edu.cn</p>
 <p align="left">Yilin Yang: yangyiln@mail.ustc.edu.cn</p>
+<p align="left">Zhuangzhuang Ren: rzz18856919896@mail.ustc.edu.cn</p>
+<p align="left">Qihui Wang: PB23111637@mail.ustc.edu.cn</p>
 <p align="left">Xiuning Liang: rzx0420@mail.ustc.edu.cn</p>
 <p align="left">Zucan Lv: zucanlv@mail.ustc.edu.cn</p>
 
 
 <h3 align="left">Languages and Tools:</h3>
-<p align="left">  <a href="https://www.linux.org/" target="_blank" rel="noreferrer"> <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/linux/linux-original.svg" alt="linux" width="40" height="40"/> </a> <a href="https://git-scm.com/" target="_blank" rel="noreferrer"> <img src="https://www.vectorlogo.zone/logos/git-scm/git-scm-icon.svg" alt="git" width="40" height="40"/> 
+<p align="left">  <a href="https://www.rust-lang.org/" target="_blank" rel="noreferrer">
+  <img src="https://www.vectorlogo.zone/logos/rust-lang/rust-lang-icon.svg" alt="Rust" width="40" height="40" />
+</a> <a href="https://www.linux.org/" target="_blank" rel="noreferrer"> <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/linux/linux-original.svg" alt="linux" width="40" height="40"/> </a> <a href="https://git-scm.com/" target="_blank" rel="noreferrer"> <img src="https://www.vectorlogo.zone/logos/git-scm/git-scm-icon.svg" alt="git" width="40" height="40"/> 
