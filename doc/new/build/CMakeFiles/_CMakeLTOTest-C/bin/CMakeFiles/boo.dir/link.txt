@@ -1,0 +1,1 @@
+/usr/bin/clang-14 -flto=thin CMakeFiles/boo.dir/main.c.o -o boo  libfoo.a 

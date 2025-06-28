@@ -1,0 +1,4 @@
+cargo:CXXBRIDGE_PREFIX=chunk_engine
+cargo:CXXBRIDGE_DIR0=/home/renzz/Valor-Go/src/target/release/build/chunk_engine-9da9fdafa9cace9c/out/cxxbridge/include
+cargo:CXXBRIDGE_DIR1=/home/renzz/Valor-Go/src/target/release/build/chunk_engine-9da9fdafa9cace9c/out/cxxbridge/crate
+cargo:rerun-if-changed=src/cxx.rs
