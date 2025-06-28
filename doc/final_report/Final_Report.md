@@ -392,4 +392,52 @@ python3 ~/3fs/deploy/data_placement/src/model/data_placement.py \
 - 迁移过程中，建议逐步替换、分阶段测试，确保功能等价和性能提升。
 
 ## 5. 研究成果
-### 部署结果
+### 5.1 部署结果
+1. 节点信息：
+   1. 一个meta（同时也是mgmtd和fuse client）:使用ecs.g8i.4xlarge
+   2. 三个storage：使用ecs.i4.4xlarge
+![list-nodes](./result_src/list-nodes.jpg)
+2. 链信息
+   1. 一条链
+   2. 链连接四个节点
+![chaintable](./result_src/chaintable.png)
+3. clickhouse运行统计信息
+![clickhouse1](./result_src/clickhouse1.png)
+![clickhouse2](./result_src/clickhouse2.png)
+最高传吞吐量大约170MB/s，这是因为机器性能和数量问题
+4. fio测试
+![fio_info](./result_src/fio_info.png)
+因为机器性能问题只能进行一个进程的测试，无法测试并发
+5. 控制台性能信息
+![ctl_info](./result_src/ctl_info.png)
+
+### 5.2 改写结果
+1. 编译完全通过
+![编译通过结果](./result_src/compile_result.png)
+2. 3fs自带单元测试结果
+   1. 原版3fs：通过278，失败36
+   ![unitest1_origin](./result_src/unitest1_ori.jpg)
+   ![unitest2_origin](./result_src/unitest2_ori.jpg)
+   2. 改写3fs：通过278，失败36
+   ![unitest1_our](./result_src/unitest1_our.jpg)
+   ![unitest2_our](./result_src/unitest2_our.jpg)
+   以上说明我们的3fs功能和原版几乎是完全一致的，但是原版3fs也不能完全通过自己的单元测试，这很有趣
+   我们猜想这个问题的原因可能是机器性能的问题，也可能是3FS自身的问题
+3. 改写前后安全性测试结果
+使用腾讯云代码分析比较改写前后安全性
+   1. 原版测试结果
+   ![tencent_test_ori](./result_src/tencent_test_ori.png)
+   2. 改写版本测试结果
+   ![tencent_test_our](./result_src/tencent_test_our.png)
+   3. 比对结果显示改写后的版本比原版问题减少5个，并且减少了一个错误，并且通过对具体检查问题的详细比对，我们改写后的版本没有新增任何问题，考虑到FUSE模块只是3FS中的一小部分，我们的改写工作应当是有不小成效的！
+
+### 5.3 项目价值
+
+#### 5.3.1 **​技术能力提升与创新实践​**
+本项目为团队成员提供了极具挑战性的技术实践机会。通过构建基于Rust的FUSE模块，我们深入掌握了文件系统底层原理、高性能I/O优化等核心系统编程知识。这种跨越语言边界（从传统C/C++到现代Rust）的系统级开发经验，显著提升了团队在并发编程、内存安全管理和系统性能调优等方面的工程能力。
+此外，部署这样的复杂系统，也显著提升了团队成员的工程能力，扩展了团队成员的知识面和技能树。
+#### 5.3.2 **​安全性与可靠性的实质性突破​**
+借助Rust的所有权模型和类型系统，重构后的3FS在内存安全方面取得显著改进。静态分析工具（腾讯云代码检查）的检测结果表明，新实现成功削减了原系统中存在的潜在内存泄漏、数据竞争等安全隐患。这种从语言层面构建的安全保障机制，为关键基础设施软件提供了更可靠的运行基础。
+#### 5.3.3 **​后续研究价值​**
+遗憾的是我们受限于机器，没能进行性能验证，如果有合适的机会，我们团队非常乐意进行相关的性能验证
+
