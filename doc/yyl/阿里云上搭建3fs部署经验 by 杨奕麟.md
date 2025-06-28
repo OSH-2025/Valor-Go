@@ -1,7 +1,7 @@
 reference1：[基于eRDMA实测DeepSeek开源的3FS_3fs编译-CSDN博客](https://blog.csdn.net/weixin_43778179/article/details/145995349)
 reference2：[DeepSeek 3FS部署最佳实践_3fs 部署-CSDN博客](https://blog.csdn.net/Franklin7B/article/details/146308170)
 
-第二篇基本上是第一篇的翻版，本人根据此文章和3fs github网站上的setup guide，大致总结了在阿里云ecs上搭建一个demo的流程和一些注意事项
+首先十分感谢以上两篇还有更多网络上的资料，在配置过程中，我在其中受益良多，因此，本人根据此文章和3fs github网站上的setup guide，大致总结了在阿里云ecs上搭建一个demo的流程和一些注意事项
 # 1.创建实例并且生成基础镜像
 
 首先需要创建编译实例用来构建3fs基础环境，此后的具体节点配置搭建在此编译环境所构成的基础上。
@@ -51,7 +51,7 @@ cmake --build build -j
 >Tips: 对于fuse client，可以搭载在meta node 上，用以进行简易测试，也可以在外部独立节点搭建，用以模拟高并发环境下的情况
 
 ## 2.1 搭建meta节点
-1. 将eRDMA模式改为1
+1. 将eRDMA模式改为1 ^4289c0
 ```Bash
 rmmod erdma
 odprobe erdma compat_mode=1
@@ -134,7 +134,7 @@ ssh-copy-id root@$(ip_address)#meta节点的ip地址
 		具体见参考链接
 	1. 这里需要根据自己的ecs配置进行设置，以我们的存储是申请了3个节点，每个节点一个SSD盘（超级丐版），这里的num-nodes需要按照这样更改。
 	2. 以下的两段代码是在分配物理存储的映射关系，与3fs使用的CR和CRAQ有关，target是最小的单元，
-
+11. example
 ```bash
 python3 ~/3fs/deploy/data_placement/src/model/data_placement.py \
   -ql -relax -type CR --num_nodes 3 --replication_factor 3 --min_targets_per_disk 1
@@ -148,6 +148,22 @@ python3 ~/3fs/deploy/data_placement/src/model/data_placement.py \
    --incidence_matrix_path output/DataPlacementModel-v_3-b_1-r_1-k_3-λ_1-lb_1-ub_0/incidence_matrix.pickle
 ```
 
+
+
+
 以上均运行在/opt/3fs/下，或者说output会产生在当前目录下，只要能在后面的命令中找到就可以
 
-出现未知错误，可能由于admin client功能莫名奇妙失去挂载（可能由于服务器停机）。也可能是因为storage 节点断开链接或者未成功链接导致target（到物理SSD的映射）（必须要保证已经建立的节点数和node id begin 到 node id end 相匹配）
+出现未知错误，可能由于admin client功能莫名奇妙失去挂载（可能由于服务器停机）。也可能是因为storage 节点断开链接或者未成功链接导致target（到物理SSD的映射）（必须要保证已经建立的节点数和node id begin 到 node id end 相匹配） 
+
+## 2.2 配置storage节点
+1. rmmod等代码（同[[#^4289c0|从这里开始的若干步一直到clickhouse]]）
+2. 配置admin client，这里可能会出现/var/log/3fs 未找到的问题，直接mkdir -p 即可
+3. 根据自己的节点数，盘数调整，来配置storage service
+
+## 2.3 配置3FS
+1. 按照教程流程即可，这里运行python3的目录最好是/opt/3fs/ 检查输出是的output文件夹应该在这之下
+2. 另一个问题是如何选择命令的参数，这里我们使用的是每个存储节点1 $\cdot$ 3GIB 的配置,(教程中是每个节点8$\cdot$ 3GIB)，这里会有一个target_per_disk 的参数，我们选择除了1以外的数都会报错：parameter infeasible，*因此**可能** 需要将这个参数设置为小于等于每个节点的盘数*
+3. 在这一步之后，主体分布式结构就已经搭建好了
+
+## 2.4 配置FUSE Client
+按照教程配置即可。我们个人在配置过程中阴差阳错将fuse没有配置到独立节点而是配置到了meta节点上，但最后也运行成功了。经过查资料，这样多个功能放在同一节点的方式可以用于小规模简易测试，而全部分散到多个独立节点可以更加贴近生产环境。
