@@ -1,2 +1,0 @@
-/usr/bin/ar qc /home/renzz/Desktop/Valor-Go/doc/rzz/test/target/release/deps/libcpp_mixed.a CMakeFiles/cpp_mixed.dir/main.cpp.o
-/usr/bin/ranlib /home/renzz/Desktop/Valor-Go/doc/rzz/test/target/release/deps/libcpp_mixed.a
