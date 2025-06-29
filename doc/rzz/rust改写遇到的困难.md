@@ -75,7 +75,7 @@ pub extern "C" fn hf3fs_fuse_set_user_config(
 
 - build.rs 脚本出错，环境变量未设置。
 
-### 3.5 安全性错误
+### 3.3 安全性错误
 - unsafe 代码块未正确处理，导致运行时崩溃。
 
 - 多线程/并发相关的竞态条件。
@@ -113,5 +113,3 @@ pub extern "C" fn hf3fs_fuse_set_user_config(
 5. **用 `RUST_BACKTRACE=1` 跑出错的二进制，获取详细堆栈信息**。
 
 ---
-
-如有具体报错信息或日志，建议贴出详细内容以便进一步分析和定位问题。 
