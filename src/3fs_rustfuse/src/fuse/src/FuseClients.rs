@@ -9,20 +9,6 @@ use tokio::task::JoinHandle;
 use tokio::sync::mpsc;
 use tokio::select;
 
-// 假设这些类型已在其它模块实现或用占位符
-// use crate::fuse_config::FuseConfig;
-// use crate::user_config::UserConfig;
-// use crate::io_ring::{IoRingJob, IoRingTable};
-// use crate::iov_table::IovTable;
-// use crate::coroutines_pool::CoroutinesPool;
-// use crate::background_runner::BackgroundRunner;
-// use crate::meta_client::MetaClient;
-// use crate::mgmtd_client::MgmtdClientForClient;
-// use crate::storage_client::StorageClient;
-// use crate::rdma_buf_pool::RDMABufPool;
-
-// 你需要根据实际项目把上面这些use补全
-
 pub struct BackgroundRunner;
 pub struct CoroutinesPool<T>(std::marker::PhantomData<T>);
 
