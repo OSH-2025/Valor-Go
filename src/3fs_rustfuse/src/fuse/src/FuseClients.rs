@@ -26,29 +26,59 @@ use tokio::select;
 pub struct BackgroundRunner;
 pub struct CoroutinesPool<T>(std::marker::PhantomData<T>);
 
+// Inode 和文件系统核心类型
+#[derive(Debug, Clone)]
+pub struct Inode {
+    pub ino: u64,
+    pub size: u64,
+    pub mode: u32,
+    pub uid: u32,
+    pub gid: u32,
+    pub atime: SystemTime,
+    pub mtime: SystemTime,
+    pub ctime: SystemTime,
+}
+
+#[derive(Debug)]
+pub struct DirEntry {
+    pub ino: u64,
+    pub name: String,
+    pub file_type: u32,
+}
+
+pub struct IOBuffer {
+    pub addr: *mut u8,
+    pub len: usize,
+}
+
+impl Drop for IOBuffer {
+    fn drop(&mut self) {
+        unsafe {
+            libc::free(self.addr as *mut libc::c_void);
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct InodeWriteBuf {
     pub buf: Vec<u8>,
-    // pub memh: Option<Arc<IOBuffer>>, // 需要你自己定义 IOBuffer
+    pub memh: Option<Arc<IOBuffer>>,
     pub off: i64,
     pub len: usize,
 }
 
 #[derive(Debug)]
 pub struct RcInode {
-    pub inode: u64, // 占位，实际应为 Inode 类型
+    pub inode: Inode,
     pub refcount: i32,
     pub opened: AtomicU64,
     pub write_buf: Mutex<Option<InodeWriteBuf>>,
-    // pub dynamic_attr: Mutex<DynamicAttr>,
-    // pub extend_stripe_lock: Mutex<()>,
 }
-
 #[derive(Debug)]
 pub struct FileHandle {
     pub rcinode: Arc<RcInode>,
     pub o_direct: bool,
-    pub session_id: u128, // 占位，实际应为 Uuid
+    pub session_id: Uuid,
 }
 
 #[derive(Debug)]
@@ -297,87 +327,83 @@ impl FuseClients {
     }
 
     pub async fn stop(&mut self) {
-    // 1. 停止并释放 notifyInvalExec 线程池
-    if let Some(exec) = self.notify_inval_exec.take() {
-        // 如果你有自定义线程池的 stop 方法，可以调用
-        // exec.stop().await;
-        drop(exec);
+        // 1. 设置停止标志
+        self.running.store(false, Ordering::SeqCst);
+        self.cancel_ios.store(true, Ordering::SeqCst);
+
+        // 2. 停止并释放所有异步任务
+        let mut handles = Vec::new();
+        std::mem::swap(&mut self.io_watches, &mut handles);
+        
+        for handle in handles {
+            handle.abort();
+        }
+
+        if let Some(handle) = self.periodic_sync_runner.take() {
+            handle.abort();
+        }
+
+        // 3. 清理脏数据
+        let dirty = self.dirty_inodes.lock().unwrap().clone();
+        if !dirty.is_empty() {
+            if let Some(storage) = &self.storage_client {
+                storage.force_flush(&dirty).await;
+            }
+        }
+
+        // 4. 停止客户端服务
+        if let Some(client) = self.client.take() {
+            client.stop().await;
+        }
+        if let Some(mgmtd) = self.mgmtd_client.take() {
+            mgmtd.stop().await;
+        }
+        if let Some(storage) = self.storage_client.take() {
+            storage.stop().await;
+        }
+        if let Some(meta) = self.meta_client.take() {
+            meta.stop().await;
+        }
+
+        println!("FuseClients stopped successfully.");
     }
 
-    // 2. 释放 onFuseConfigUpdated 回调（如果有）
-    // Rust 通常用 Option<Arc<...>> 或 Option<Box<...>>，直接 take/drop 即可
-    // self.on_fuse_config_updated = None; // 如果有类似字段
-
-    // 3. 请求取消所有异步任务
-    self.cancel_ios.store(true, std::sync::atomic::Ordering::Relaxed);
-
-    // 4. 停止所有 watcher/worker 线程
-    for handle in self.io_watches.drain(..) {
-        handle.abort(); // 立即终止任务
-        // 或者：let _ = handle.await; // 等待任务自然结束
-    }
-
-    // 5. 停止并释放 periodicSyncRunner、periodicSyncWorker
-    if let Some(runner) = self.periodic_sync_runner.take() {
-        // 如果有 async 停止方法可以调用 runner.stop_all().await;
-        drop(runner);
-    }
-    if let Some(worker) = self.periodic_sync_worker.take() {
-        // 如果有 async 停止方法可以调用 worker.stop_and_join().await;
-        drop(worker);
-    }
-
-    // 6. 停止并释放 metaClient、storageClient、mgmtdClient、client
-    if let Some(meta) = self.meta_client.take() {
-        // 如果有 async 停止方法可以调用 meta.stop().await;
-        drop(meta);
-    }
-    if let Some(storage) = self.storage_client.take() {
-        // 如果有 async 停止方法可以调用 storage.stop().await;
-        drop(storage);
-    }
-    if let Some(mgmtd) = self.mgmtd_client.take() {
-        // 如果有 async 停止方法可以调用 mgmtd.stop().await;
-        drop(mgmtd);
-    }
-    if let Some(client) = self.client.take() {
-        // 如果有 async 停止方法可以调用 client.stop_and_join().await;
-        drop(client);
-    }
-
-    println!("FuseClients stopped.");
-}
 
     pub fn start_io_workers(&mut self, n: usize) {
         let running = self.running.clone();
+        
         for i in 0..n {
-            let running = running.clone();
-            let handle = tokio::spawn(async move {
-                while running.load(Ordering::Relaxed) {
-                    // TODO: IO 任务逻辑
-                    println!("ioRingWorker {} running...", i);
-                    tokio::time::sleep(Duration::from_millis(500)).await;
-                }
-                println!("ioRingWorker {} exit.", i);
-            });
+            let q0 = self.iojqs[0].lock().unwrap().take_receiver(0);
+            let q1 = self.iojqs[1].lock().unwrap().take_receiver(1);
+            let q2 = self.iojqs[2].lock().unwrap().take_receiver(2);
+            
+            let running_clone = running.clone();
+            let handle = tokio::spawn(io_ring_worker(q0, q1, q2, i, running_clone));
             self.io_watches.push(handle);
         }
     }
 
-    pub fn start_periodic_sync(&mut self) {
+     fn start_periodic_sync(&mut self) {
         let running = self.running.clone();
+        let dirty_inodes = self.dirty_inodes.clone();
+        
         let handle = tokio::spawn(async move {
             while running.load(Ordering::Relaxed) {
-                // TODO: 定时同步逻辑
-                println!("periodicSyncScan running...");
-                tokio::time::sleep(Duration::from_secs(2)).await;
+                if let Some(storage) = FuseClients::global_storage_client() {
+                    let inodes = dirty_inodes.lock().unwrap().clone();
+                    if !inodes.is_empty() {
+                        storage.force_flush(&inodes).await;
+                        dirty_inodes.lock().unwrap().clear();
+                    }
+                }
+                
+                tokio::time::sleep(Duration::from_secs(30)).await;
             }
-            println!("periodicSyncScan exit.");
         });
-        self.io_watches.push(handle);
+        
+        self.periodic_sync_runner = Some(handle);
     }
-}
-
+    
 pub async fn io_ring_worker(
     mut queue0: mpsc::Receiver<IoRingJob>,
     mut queue1: mpsc::Receiver<IoRingJob>,
