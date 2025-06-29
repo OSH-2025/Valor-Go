@@ -576,6 +576,7 @@ clickhouse是一个实时数据分析工具，3fs内置了clickhouse供我们调
 4. fio测试
 ![fio_info](./result_src/fio_info.png)
 因为机器性能问题只能进行一个进程的测试，无法测试并发
+吞吐量大约110MB/s，3FS官方部署（180个存储节点+高并发）最高是达到了6TB/s，这和原版差别是非常大的，不过说明我们的功能是正确的
 5. 控制台性能信息
 ![ctl_info](./result_src/ctl_info.png)
 
