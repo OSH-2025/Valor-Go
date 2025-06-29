@@ -32,8 +32,8 @@
       - [4.2.2 主要模块的迁移与重构](#422-主要模块的迁移与重构)
       - [4.2.3 迁移过程中的通用思路](#423-迁移过程中的通用思路)
       - [4.2.4 常见错误及解决方案](#424-常见错误及解决方案)
-        - [4.2.4.1 FFI 编写时的错误及解决方案](#4241-ffi-编写时的错误及解决方案)
-        - [4.2.4.2 Rust 文件改写时的错误及解决方案](#4242-rust-文件改写时的错误及解决方案)
+        - [4.2.4.1 FFI 相关错误](#4241-ffi-相关错误)
+        - [4.2.4.2 Rust 文件改写时遇到的错误](#4242-rust-文件改写时遇到的错误)
         - [4.2.4.3 混合编译整个 3fs 目录时的错误及解决方案](#4243-混合编译整个-3fs-目录时的错误及解决方案)
       - [4.2.5 Rust改写C类语言的总结](#425-rust改写c类语言的总结)
   - [5. 研究成果](#5-研究成果)
@@ -309,6 +309,11 @@ python3 ~/3fs/deploy/data_placement/src/model/data_placement.py \
 3. Rust 兼容 C++ 的 glue 层（src/3fs_rustfuse/src/fuse/）：
    - 依然保留部分 .cc 和 .h 文件，作为与 C++ 生态与 FFI 交互的桥梁。
    - 例如 IoRing.h, UserConfig.h, PioV.h 等，内容与原始实现类似，但通常只保留接口声明或做简单适配。
+   - 数据转换：Rust 和 C++ 的数据类型并不完全相同，
+   - glue 层的作用：
+     - 负责在两种语言之间进行数据类型的转换。例如，将 Rust 中的字符串转换为 C++ 可以识别的格式，或者将 C++ 中的复杂数据结构转换为 Rust 能够处理的形式。
+     - 调用封装：封装 Rust 或 C++ 的函数调用，使其能够被另一种语言调用。这包括处理函数的参数传递、返回值处理以及异常处理等。例如，通过 glue 层，C++ 代码可以调用 Rust 中定义的函数，反之亦然。
+     - 内存管理协调：Rust 和 C++ 有不同的内存管理机制，glue 层需要协调两种语言的内存分配和释放。例如，确保 Rust 分配的内存可以在 C++ 中安全地使用，并且在不需要时正确地释放。
 
 #### 4.2.2 主要模块的迁移与重构
 1. FUSE 操作层（FuseOps）
@@ -557,18 +562,17 @@ pub extern "C" fn hf3fs_fuse_set_user_config(
 
 ## 5. 研究成果
 ### 5.1 部署结果
-1. 节点信息：
+1. 部署节点信息：
    1. 一个meta（同时也是mgmtd和fuse client）:使用ecs.g8i.4xlarge
-   2. 三个storage：使用ecs.i4.4xlarge
+   2. 三个storage：使用ecs.i4.4xlarge（一个带有NVMe的SSD盘）
 ![list-nodes](./result_src/list-nodes.jpg)
-2. 链信息
+2. 链信息（CRAQ中的chian）
    1. 一条链
-   2. 链连接四个节点
+   2. 该链连接四个节点
 ![chaintable](./result_src/chaintable.png)
 3. clickhouse运行统计信息
-![clickhouse1](./result_src/clickhouse1.png)
+clickhouse是一个实时数据分析工具，3fs内置了clickhouse供我们调用查看运行时的部分统计信息
 ![clickhouse2](./result_src/clickhouse2.png)
-最高传吞吐量大约170MB/s，这是因为机器性能和数量问题
 4. fio测试
 ![fio_info](./result_src/fio_info.png)
 因为机器性能问题只能进行一个进程的测试，无法测试并发
