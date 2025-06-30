@@ -1,4 +1,5 @@
 # 部署说明文档
+
 ## Valor-go Team
 
 ## 1. LLM部署相关的性能指标列表
@@ -22,15 +23,23 @@
    1. 定义：单次请求消耗的计算资源成本（如GPU秒数）
    2. 合理性：直接关联商业可行性，尤其在面向C端的高频调用场景（如AI写作助手）
 
-
 ## 2. 编译相关配置（强烈推荐和文档配置保持一致）
 
 1. 操作系统：Ubuntu 22.04
-2. Driver Version: 550.163.01     
+2. Driver Version: 550.163.01
 3. CUDA Version: 12.4
 4. gcc (Ubuntu 11.4.0-1ubuntu1~22.04) 11.4.0
 5. g++ (Ubuntu 11.4.0-1ubuntu1~22.04) 11.4.0
 
 说明：
+
 1. Driver Version，CUDA Version，gcc，g++各版本需要保持一致，否则可能无法编译
 2. 不建议使用clang，CUDA对clang支持不太好
+
+## 3. 获取模型
+
+1. 使用：Qwen3-1.7B
+2. 指令：由于国内防火墙的问题，我们使用镜像来实现
+   1. `export HF_ENDPOINT=https://hf-mirror.com`配置hugging-face镜像访问
+   2. cd 到 `.../lab4/llama.cpp/build/bin`然后使用指令 `./llama-server -hf ggml-org/Qwen3-1.7B-GGUF: Q4_K_M`即可获取模型并且打开端口进行对话
+   3. "mv ~/.cache/llama.cpp/ggml-org_Qwen3-1.7B-GGUF_Qwen3-1.7B-Q4_K_M.gguf .../lab4/llama.cpp/build/bin/models/"将模型存储到buid/bin文件夹中方便使用
