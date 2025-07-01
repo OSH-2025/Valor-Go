@@ -41,6 +41,7 @@
 | 最后冲刺 | 2025.06.27| 完成所有部署和测试工作| 全体在自习室开展工作|
 | 最后冲刺 | 2025.06.28| 实现部署上的功能和安全性测试| 全体在自习室开展工作|
 | 最后冲刺 | 2025.06.29| 准备答辩PPT和结题报告| 全体在自习室开展工作|
+| 最后冲刺 | 2025.06.30| 答辩| 全体在教室参加答辩|
 <h3 align="left">与我们联系:</h3>
 <p align="left">Yilin Yang: yangyiln@mail.ustc.edu.cn</p>
 <p align="left">Zhuangzhuang Ren: rzz18856919896@mail.ustc.edu.cn</p>

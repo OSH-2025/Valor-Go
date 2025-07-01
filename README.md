@@ -40,6 +40,7 @@
 | Final spurt| 2025.06.27| Complete universal deployment and functional testing|Everyone works together in a study room|
 | Final spurt| 2025.06.28| Implement and confirm functions and safety and prepare for thesis denfense & final report|Everyone works together in a study room| 
 | Final spurt| 2025.06.29| Prepare for ppt display and final report|Everyone works together in a study room|
+| Final day| 2025.06.30| thesis defense on stage|Everyone stays together in the classroom|
 <h3 align="left">Connect with us:</h3>
 <p align="left">Yilin Yang: yangyiln@mail.ustc.edu.cn</p>
 <p align="left">Zhuangzhuang Ren: rzz18856919896@mail.ustc.edu.cn</p>
