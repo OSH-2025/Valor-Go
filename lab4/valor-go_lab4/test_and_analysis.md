@@ -30,6 +30,52 @@
    
 ### 2.2 测试任务
 使用llama-bench进行测试(llama-bench的详细使用请参考：https://github.com/ggml-org/llama.cpp/tree/master/tools/llama-bench)
+```
+usage: llama-bench [options]
+
+options:
+  -h, --help
+  --numa <distribute|isolate|numactl>       numa mode (default: disabled)
+  -r, --repetitions <n>                     number of times to repeat each test (default: 5)
+  --prio <0|1|2|3>                          process/thread priority (default: 0)
+  --delay <0...N> (seconds)                 delay between each test (default: 0)
+  -o, --output <csv|json|jsonl|md|sql>      output format printed to stdout (default: md)
+  -oe, --output-err <csv|json|jsonl|md|sql> output format printed to stderr (default: none)
+  -v, --verbose                             verbose output
+  --progress                                print test progress indicators
+
+test parameters:
+  -m, --model <filename>                    (default: models/7B/ggml-model-q4_0.gguf)
+  -p, --n-prompt <n>                        (default: 512)
+  -n, --n-gen <n>                           (default: 128)
+  -pg <pp,tg>                               (default: )
+  -d, --n-depth <n>                         (default: 0)
+  -b, --batch-size <n>                      (default: 2048)
+  -ub, --ubatch-size <n>                    (default: 512)
+  -ctk, --cache-type-k <t>                  (default: f16)
+  -ctv, --cache-type-v <t>                  (default: f16)
+  -dt, --defrag-thold <f>                   (default: -1)
+  -t, --threads <n>                         (default: system dependent)
+  -C, --cpu-mask <hex,hex>                  (default: 0x0)
+  --cpu-strict <0|1>                        (default: 0)
+  --poll <0...100>                          (default: 50)
+  -ngl, --n-gpu-layers <n>                  (default: 99)
+  -rpc, --rpc <rpc_servers>                 (default: none)
+  -sm, --split-mode <none|layer|row>        (default: layer)
+  -mg, --main-gpu <i>                       (default: 0)
+  -nkvo, --no-kv-offload <0|1>              (default: 0)
+  -fa, --flash-attn <0|1>                   (default: 0)
+  -mmp, --mmap <0|1>                        (default: 1)
+  -embd, --embeddings <0|1>                 (default: 0)
+  -ts, --tensor-split <ts0/ts1/..>          (default: 0)
+  -ot --override-tensors <tensor name pattern>=<buffer type>;...
+                                            (default: disabled)
+  -nopo, --no-op-offload <0|1>              (default: 0)
+
+Multiple values can be given for each parameter by separating them with ','
+or by specifying the parameter multiple times. Ranges can be given as
+'first-last' or 'first-last+step' or 'first-last*mult'.
+```
 1. 吞吐能力测试: 
    1. 不同batch_size下的吞吐能力测试
       1. 指令`./llama-bench -n 0 -p 1024 -b 128,256,512,1024 -m ./models/ggml-org_Qwen3-1.7B-GGUF_Qwen3-1.7B-Q4_K_M.gguf`;
@@ -41,34 +87,81 @@
       3. 使用 prompt 长度 64（-p 64）
       4. 不生成 tokens 的测试：-n 0 → pp64
       5. 生成 16 tokens 的测试：-n 16 → tg16
+   3. 不同GPU层数下的吞吐能力测试
+      1. `./llama-bench -ngl 10,20,30,31,32,33,34,35,99 -m ./models/ggml-org_Qwen3-1.7B-GGUF_Qwen3-1.7B-Q4_K_M.gguf`
+      2. `-ngl`指`n-gpu-layers`，即放置在GPU上的模型层数
+   4. 不同预填充上下文下的吞吐能力测试
+      1. `./llama-bench -d 0,512 -m ./models/ggml-org_Qwen3-1.7B-GGUF_Qwen3-1.7B-Q4_K_M.gguf`
+      2. 这里的`-d`就是指定预填充上下文的长度
+
 
 
 ## 3. 测试数据
-### 3.1 吞吐能力测试
-### 3.1.1 不同batch-size下的吞吐能力测试
-`./llama-bench -n 0 -p 1024 -b 128,256,512,1024 -m ./models/ggml-org_Qwen3-1.7B-GGUF_Qwen3-1.7B-Q4_K_M.gguf`
-| model                          |       size |     params | backend    | ngl | n_batch |            test |                  t/s |
-| ------------------------------ | ---------: | ---------: | ---------- | --: | ------: | --------------: | -------------------: |
-| qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  99 |     128 |          pp1024 |      2457.54 ± 79.48 |
-| qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  99 |     256 |          pp1024 |      2419.84 ± 30.16 |
-| qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  99 |     512 |          pp1024 |      2375.89 ± 16.96 |
-| qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  99 |    1024 |          pp1024 |      2408.87 ± 10.85 |
 
-### 3.1.2 不同threads_num下的吞吐能力测试
-1. pp<num>	prompt processing, prompt 长度 = num, 仅 prompt 前向速度
-2. tg<num>	text generation, gen token 数 = num, prompt + token 生成速度
-| model                          |       size |     params | backend    | ngl | threads |            test |                  t/s |
-| ------------------------------ | ---------: | ---------: | ---------- | --: | ------: | --------------: | -------------------: |
-| qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  99 |       1 |            pp64 |    2586.35 ± 1034.14 |
-| qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  99 |       1 |            tg16 |         34.37 ± 3.76 |
-| qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  99 |       2 |            pp64 |      2167.59 ± 42.58 |
-| qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  99 |       2 |            tg16 |         33.36 ± 0.34 |
-| qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  99 |       4 |            pp64 |      2164.58 ± 78.53 |
-| qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  99 |       4 |            tg16 |         33.73 ± 2.35 |
-| qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  99 |       8 |            pp64 |      2146.30 ± 55.10 |
-| qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  99 |       8 |            tg16 |         33.07 ± 1.15 |
-| qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  99 |      16 |            pp64 |      2084.91 ± 50.26 |
-| qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  99 |      16 |            tg16 |         32.79 ± 1.14 |
-| qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  99 |      32 |            pp64 |      2090.97 ± 47.05 |
-| qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  99 |      32 |            tg16 |         32.79 ± 1.37 |
+### 3.1 吞吐能力测试
+
+#### 3.1.1 不同batch-size下的吞吐能力测试
+`./llama-bench -n 0 -p 1024 -b 128,256,512,1024 -m ./models/ggml-org_Qwen3-1.7B-GGUF_Qwen3-1.7B-Q4_K_M.gguf`
+| model                          |       size |     params | backend    | ngl | n_batch |            test |                  t/s |Memory Use(MiB)|
+| ------------------------------ | ---------: | ---------: | ---------- | --: | ------: | --------------: | -------------------: |--------------:|
+| qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  99 |     128 |          pp1024 |      2457.54 ± 79.48 |1374|
+| qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  99 |     256 |          pp1024 |      2419.84 ± 30.16 |1454|
+| qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  99 |     512 |          pp1024 |      2375.89 ± 16.96 |1614|
+| qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  99 |    1024 |          pp1024 |      2408.87 ± 10.85 |1614|
+
+#### 3.1.2 不同threads_num下的吞吐能力测试
+`./llama-bench -n 0 -n 16 -p 64 -t 1,2,4,8,16,32 -m ./models/ggml-org_Qwen3-1.7B-GGUF_Qwen3-1.7B-Q4_K_M.gguf`
+1. pp(num):	指prompt processing, 提示词长度 = num, 可测试 prompt 前向速度
+2. tg(num):	指text generation, 生成token 数 = num, 可测试prompt + token 生成速度
+
+
+| model                          |       size |     params | backend    | ngl | threads |            test |                  t/s |Memory Use(MiB)|
+| ------------------------------ | ---------: | ---------: | ---------- | --: | ------: | --------------: | -------------------: |-------------------: |
+| qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  99 |       1 |            pp64 |    2586.35 ± 1034.14 |1224|
+| qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  99 |       1 |            tg16 |         34.37 ± 3.76 |1208|
+| qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  99 |       2 |            pp64 |      2167.59 ± 42.58 |1228|
+| qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  99 |       2 |            tg16 |         33.36 ± 0.34 |1228|
+| qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  99 |       4 |            pp64 |      2164.58 ± 78.53 |1228|
+| qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  99 |       4 |            tg16 |         33.73 ± 2.35 |1224|
+| qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  99 |       8 |            pp64 |      2146.30 ± 55.10 |1226|
+| qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  99 |       8 |            tg16 |         33.07 ± 1.15 |1224|
+| qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  99 |      16 |            pp64 |      2084.91 ± 50.26 |1228|
+| qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  99 |      16 |            tg16 |         32.79 ± 1.14 |1228|
+| qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  99 |      32 |            pp64 |      2090.97 ± 47.05 |1228|
+| qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  99 |      32 |            tg16 |         32.79 ± 1.37 |1228|
+
+#### 3.1.3 不同GPU层数下的吞吐能力测试
+
+`./llama-bench -ngl 10,20,30,31,32,33,34,35,99 -m ./models/ggml-org_Qwen3-1.7B-GGUF_Qwen3-1.7B-Q4_K_M.gguf`
+
+| model                          |       size |     params | backend    | ngl |            test |                  t/s |Memory Use(MiB)|
+| ------------------------------ | ---------: | ---------: | ---------- | --: | --------------: | -------------------: |-------------------: |
+| qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  10 |           pp512 |      2439.33 ± 98.51 |998|
+| qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  10 |           tg128 |         44.79 ± 2.06 |998|
+| qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  20 |           pp512 |     2840.46 ± 272.70 |1304|
+| qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  20 |           tg128 |         56.58 ± 4.67 |1304|
+| qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  30 |           pp512 |     2509.46 ± 378.98 |1550|
+| qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  30 |           tg128 |         33.80 ± 0.53 |1550|
+| qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  31 |           pp512 |     2641.39 ± 136.02 |1550|
+| qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  31 |           tg128 |         33.09 ± 0.26 |1550|
+| qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  32 |           pp512 |     2773.88 ± 174.51 |1550|
+| qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  32 |           tg128 |         32.74 ± 0.05 |1550|
+| qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  33 |           pp512 |     2580.63 ± 142.67 |1550|
+| qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  33 |           tg128 |         32.59 ± 0.15 |1550|
+| qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  34 |           pp512 |     2764.08 ± 129.42 |1550|
+| qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  34 |           tg128 |         32.84 ± 0.09 |1550|
+| qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  35 |           pp512 |     2571.51 ± 127.89 |1550|
+| qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  35 |           tg128 |         32.61 ± 0.04 |1550|
+| qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  99 |           pp512 |     2340.46 ± 479.29 |1550|
+| qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  99 |           tg128 |         32.39 ± 0.09 |1550|
+
+#### 3.1.4 不同预填充上下文下的吞吐能力测试
+`./llama-bench -d 0,512 -m ./models/ggml-org_Qwen3-1.7B-GGUF_Qwen3-1.7B-Q4_K_M.gguf`
+
+| model                          |       size |     params | backend    | ngl |            test |                  t/s |Memory Use(MiB)|
+| ------------------------------ | ---------: | ---------: | ---------- | --: | --------------: | -------------------: |
+| qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  99 |           pp512 |     2707.51 ± 196.63 |1550|
+| qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  99 |           tg128 |         33.38 ± 0.33 |1550|
+| qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  99 |    pp512 @ d512 |      2173.30 ± 21.61 |1614|
+| qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  99 |    tg128 @ d512 |         31.40 ± 0.55 |1614|
 

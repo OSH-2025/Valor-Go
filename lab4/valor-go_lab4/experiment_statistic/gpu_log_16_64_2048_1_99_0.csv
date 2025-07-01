@@ -1,0 +1,5 @@
+timestamp, utilization.gpu [%], utilization.memory [%], memory.total [MiB], memory.used [MiB]
+2025/07/01 20:26:33.100, 0 %, 0 %, 8188 MiB, 9 MiB
+2025/07/01 20:26:34.102, 91 %, 48 %, 8188 MiB, 1208 MiB
+2025/07/01 20:26:35.102, 99 %, 24 %, 8188 MiB, 1208 MiB
+2025/07/01 20:26:36.103, 99 %, 25 %, 8188 MiB, 1208 MiB
