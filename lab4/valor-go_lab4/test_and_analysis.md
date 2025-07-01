@@ -93,29 +93,39 @@ or by specifying the parameter multiple times. Ranges can be given as
    4. 不同预填充上下文下的吞吐能力测试
       1. `./llama-bench -d 0,512 -m ./models/ggml-org_Qwen3-1.7B-GGUF_Qwen3-1.7B-Q4_K_M.gguf`
       2. 这里的`-d`就是指定预填充上下文的长度
+2. 显存占用测试：
+只需在使用llama-bench测试时，在另一个终端使用指令`nvidia-smi --query-gpu=timestamp,utilization.gpu,utilization.memory,memory.total,memory.used --format=csv -l 1 > gpu_log.csv`，其中的`memory.used`便是显存占用
+为了方便，我编写了一个脚本`run_benchmark.sh`在使用llama-bench时同时触发上述指令
+收集数据时仅选择最大值（峰值）
+3. 测试任务说明：
++ `pp(num)` 指prompt processing, 也就是提示词长度 = num,用于测评纯前向推理速度，比如总结/编码阶段的瓶颈。
++ `tg(num)` 指text generation, 也就是生成token 数 = num，用于测评生成速度，反映整体响应时间中的实际 token 生成效率
 
 
 
-## 3. 测试数据
 
-### 3.1 吞吐能力测试
+## 3. 测试数据、分析以及优化
++ 选择最佳参数的原则：
+  + `Tokens per Second`越大越好，这样吞吐更快
+  + `GPU Memory Use`适中比较好
 
-#### 3.1.1 不同batch-size下的吞吐能力测试
+### 3.1.1 不同batch-size下的测试
 `./llama-bench -n 0 -p 1024 -b 128,256,512,1024 -m ./models/ggml-org_Qwen3-1.7B-GGUF_Qwen3-1.7B-Q4_K_M.gguf`
-| model                          |       size |     params | backend    | ngl | n_batch |            test |                  t/s |Memory Use(MiB)|
+| model                          |       size |     params | backend    | ngl | n_batch |            test |                  t/s |GPU Memory Use(MiB)|
 | ------------------------------ | ---------: | ---------: | ---------- | --: | ------: | --------------: | -------------------: |--------------:|
 | qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  99 |     128 |          pp1024 |      2457.54 ± 79.48 |1374|
 | qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  99 |     256 |          pp1024 |      2419.84 ± 30.16 |1454|
 | qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  99 |     512 |          pp1024 |      2375.89 ± 16.96 |1614|
 | qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  99 |    1024 |          pp1024 |      2408.87 ± 10.85 |1614|
 
-#### 3.1.2 不同threads_num下的吞吐能力测试
+观察以上数据可知：随着`batch_size`增加，`Tokens per Second`标准差逐渐稳定，`GPU Memory Use`逐渐升高直至最大`1614`，
+因此我们对`batch_size`的最优化选择是128，此时`Tokens per Second`最大，且`GPU Memory Use`最小
+
+### 3.1.2 不同threads_num下的测试
 `./llama-bench -n 0 -n 16 -p 64 -t 1,2,4,8,16,32 -m ./models/ggml-org_Qwen3-1.7B-GGUF_Qwen3-1.7B-Q4_K_M.gguf`
-1. pp(num):	指prompt processing, 提示词长度 = num, 可测试 prompt 前向速度
-2. tg(num):	指text generation, 生成token 数 = num, 可测试prompt + token 生成速度
 
 
-| model                          |       size |     params | backend    | ngl | threads |            test |                  t/s |Memory Use(MiB)|
+| model                          |       size |     params | backend    | ngl | threads |            test |                  t/s |GPU Memory Use(MiB)|
 | ------------------------------ | ---------: | ---------: | ---------- | --: | ------: | --------------: | -------------------: |-------------------: |
 | qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  99 |       1 |            pp64 |    2586.35 ± 1034.14 |1224|
 | qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  99 |       1 |            tg16 |         34.37 ± 3.76 |1208|
@@ -130,11 +140,16 @@ or by specifying the parameter multiple times. Ranges can be given as
 | qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  99 |      32 |            pp64 |      2090.97 ± 47.05 |1228|
 | qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  99 |      32 |            tg16 |         32.79 ± 1.37 |1228|
 
-#### 3.1.3 不同GPU层数下的吞吐能力测试
+观察数据可知：
++ 在pp64测试中，随着线程数增加，`Tokens per Second`均值逐渐减小、方差起伏不定，`GPU Memory Use`保持稳定
++ 在tg16测试中，和pp64测试类似
++ 综上，线程数的最优化选择是1
+
+### 3.1.3 不同GPU层数下的测试
 
 `./llama-bench -ngl 10,20,30,31,32,33,34,35,99 -m ./models/ggml-org_Qwen3-1.7B-GGUF_Qwen3-1.7B-Q4_K_M.gguf`
 
-| model                          |       size |     params | backend    | ngl |            test |                  t/s |Memory Use(MiB)|
+| model                          |       size |     params | backend    | ngl |            test |                  t/s |GPU Memory Use(MiB)|
 | ------------------------------ | ---------: | ---------: | ---------- | --: | --------------: | -------------------: |-------------------: |
 | qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  10 |           pp512 |      2439.33 ± 98.51 |998|
 | qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  10 |           tg128 |         44.79 ± 2.06 |998|
@@ -155,13 +170,86 @@ or by specifying the parameter multiple times. Ranges can be given as
 | qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  99 |           pp512 |     2340.46 ± 479.29 |1550|
 | qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  99 |           tg128 |         32.39 ± 0.09 |1550|
 
-#### 3.1.4 不同预填充上下文下的吞吐能力测试
++ 在pp512测试中：随着`ngl`增加，`Tokens per Second`在`ngl=20`时表现最佳，且`GPU Memory Use`在`ngl=30`及以后达到最大值1550
++ 在tg128测试中，`Tokens per Second`中表现最佳的也是`ngl=20`，且它的`GPU Memory Use`并没有达到最大
++ 综合考虑我们的最优化选择为`ngl=20`
+
+### 3.1.4 不同预填充上下文下的测试
 `./llama-bench -d 0,512 -m ./models/ggml-org_Qwen3-1.7B-GGUF_Qwen3-1.7B-Q4_K_M.gguf`
 
-| model                          |       size |     params | backend    | ngl |            test |                  t/s |Memory Use(MiB)|
-| ------------------------------ | ---------: | ---------: | ---------- | --: | --------------: | -------------------: |
+| model                          |       size |     params | backend    | ngl |            test |                  t/s |GPU Memory Use(MiB)|
+| ------------------------------ | ---------: | ---------: | ---------- | --: | --------------: | -------------------: |-------------------: |
 | qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  99 |           pp512 |     2707.51 ± 196.63 |1550|
 | qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  99 |           tg128 |         33.38 ± 0.33 |1550|
 | qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  99 |    pp512 @ d512 |      2173.30 ± 21.61 |1614|
 | qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  99 |    tg128 @ d512 |         31.40 ± 0.55 |1614|
+
++ 无论是pp512还是tg128，`d=0`时`Tokens per Second`均大于`d=512`时，且`d=0`时可以节省`GPU Memory`
++ 所以最优化选择是`d=0`
+
+## 4. 关键优化操作分析
+
+### 4.1 影响最大的三项优化操作
+
+根据测试数据，按照对性能指标和LLM输出质量的**影响程度从大到小**排序：
+
+#### 4.1.1 GPU层数优化(ngl)
+**数据：**
+- `ngl=10`: pp512测试为2439.33 t/s，GPU内存998MiB
+- `ngl=20`: pp512测试为2840.46 t/s，GPU内存1304MiB  
+- `ngl=99`: pp512测试为2340.46 t/s，GPU内存1550MiB
+
+**影响分析：**
+- **性能影响**：从ngl=10到ngl=20，吞吐量提升16.4%（2439→2840 t/s），这是所有测试中最显著的性能提升
+- **资源效率**：ngl=20相比ngl=99节省246MiB GPU内存，同时保持更优性能
+- **输出质量影响**：GPU层数直接影响模型推理精度。过少的GPU层会导致部分计算在CPU上进行，可能影响数值精度和模型输出的一致性
+
+**原因解释：**
+- ngl=20时达到了GPU计算能力和内存使用的最佳平衡点
+- 过高的ngl值会导致GPU内存碎片化和调度开销增加
+- 适中的GPU层数确保了关键的注意力计算和前馈网络在GPU上高效执行
+
+#### 4.1.2 批处理大小优化(batch_size)
+**数据：**
+- `batch_size=128`: 2457.54 t/s，GPU内存1374MiB
+- `batch_size=256`: 2419.84 t/s，GPU内存1454MiB
+- `batch_size=1024`: 2408.87 t/s，GPU内存1614MiB
+
+**影响分析：**
+- **性能影响**：batch_size=128相比1024提升约2%的吞吐量，同时节省240MiB内存
+- **并发能力**：较小的batch_size为并发请求预留更多GPU内存空间
+- **输出质量影响**：batch_size主要影响推理效率，对单个请求的输出质量影响较小
+
+**原因解释：**
+- 较小的batch_size减少了GPU内存碎片，提高了内存访问效率
+- 避免了大batch导致的缓存失效和内存带宽瓶颈
+
+#### 4.1.3 线程数优化(threads)
+**数据：**
+- `threads=1`: pp64测试为2586.35 t/s
+- `threads=2`: pp64测试为2167.59 t/s
+- `threads=32`: pp64测试为2090.97 t/s
+
+**影响分析：**
+- **性能影响**：单线程相比多线程有显著优势，threads=1比threads=32提升约24%
+- **资源利用**：多线程在GPU加速场景下反而引入了额外开销
+- **输出质量影响**：线程数不直接影响模型输出质量，主要影响推理速度
+
+**原因解释：**
+- GPU计算为主的场景下，CPU多线程并行的收益有限
+- 线程间同步和调度开销超过了并行带来的收益
+
+### 4.2 最优参数组合
+
+基于以上分析，推荐的最优参数组合：
+- **ngl=20** (GPU层数)
+- **batch_size=128** (批处理大小)  
+- **threads=1** (线程数)
+- **d=0** (预填充上下文)
+
+**预期效果：**
+- 最大化吞吐量性能
+- 优化GPU内存使用效率
+- 为并发请求预留资源空间
+- 保持模型输出质量稳定性
 
