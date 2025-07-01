@@ -1,5 +1,3 @@
-reference1：[基于eRDMA实测DeepSeek开源的3FS_3fs编译-CSDN博客](https://blog.csdn.net/weixin_43778179/article/details/145995349)
-reference2：[DeepSeek 3FS部署最佳实践_3fs 部署-CSDN博客](https://blog.csdn.net/Franklin7B/article/details/146308170)
 
 首先十分感谢以上两篇还有更多网络上的资料，在配置过程中，我在其中受益良多，因此，本人根据此文章和3fs github网站上的setup guide，大致总结了在阿里云ecs上搭建一个demo的流程和一些注意事项
 # 1.创建实例并且生成基础镜像
@@ -167,3 +165,7 @@ python3 ~/3fs/deploy/data_placement/src/model/data_placement.py \
 
 ## 2.4 配置FUSE Client
 按照教程配置即可。我们在配置过程中阴差阳错将fuse没有配置到独立节点而是配置到了meta节点上，但最后也运行成功了。经过查资料，这样多个功能放在同一节点的方式可以用于小规模简易测试，而全部分散到多个独立节点可以更加贴近生产环境。
+
+
+reference1：[基于eRDMA实测DeepSeek开源的3FS_3fs编译-CSDN博客](https://blog.csdn.net/weixin_43778179/article/details/145995349)
+reference2：[DeepSeek 3FS部署最佳实践_3fs 部署-CSDN博客](https://blog.csdn.net/Franklin7B/article/details/146308170)
