@@ -38,6 +38,7 @@
 | Final spurt| 2025.06.25| Complete basic refactoring|Everyone works together in a study room.| 
 | Final spurt| 2025.06.26| Complete universal deployment|Everyone works together in a study room|
 | Final spurt| 2025.06.27| Complete universal deployment and functional testing|Everyone works together in a study room|
+| Final spurt| 2025.06.28| Implement and confirm functions and safety and prepare for thesis denfense & final report|Everyone works together in a study room| 
 <h3 align="left">Connect with us:</h3>
 <p align="left">Yilin Yang: yangyiln@mail.ustc.edu.cn</p>
 <p align="left">Zhuangzhuang Ren: rzz18856919896@mail.ustc.edu.cn</p>
