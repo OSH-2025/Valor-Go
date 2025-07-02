@@ -1,6 +1,7 @@
 # 性能测试与分析文档
 
 ## Valor-go Team
+小组知乎文章：https://zhuanlan.zhihu.com/p/1923813736247964768
 
 ## 1. LLM部署相关的性能指标列表
 
@@ -111,6 +112,7 @@ or by specifying the parameter multiple times. Ranges can be given as
 
 ### 3.1.1 不同batch-size下的测试
 `./llama-bench -n 0 -p 1024 -b 128,256,512,1024 -m ./models/ggml-org_Qwen3-1.7B-GGUF_Qwen3-1.7B-Q4_K_M.gguf`
+
 | model                          |       size |     params | backend    | ngl | n_batch |            test |                  t/s |GPU Memory Use(MiB)|
 | ------------------------------ | ---------: | ---------: | ---------- | --: | ------: | --------------: | -------------------: |--------------:|
 | qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CUDA       |  99 |     128 |          pp1024 |      2457.54 ± 79.48 |1374|
