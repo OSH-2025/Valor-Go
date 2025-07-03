@@ -96,13 +96,41 @@ sudo apt-get update
  
 sudo apt-get install -y clickhouse-server clickhouse-client
 #在安装的时候会要求输入密码, 任意指定即可
+sudo clickhouse start 
+#开启服务
+
+clickhouse-client --password 'your password'
+#client启动
+clickhouse-client --password 'your password' -n  < ~/3fs/deploy/sql/3fs-monitor.sql
+#创建metric table
 ```
-4. 配置monitor服务在我们的配置过程中，有时会出现，启动失败的情况，报错core - dumped，但在我们执行了这段代码后，启动正常，*不过不排除启动需要时间，而我们在没有启动的时候就查看状态了*
+4. 配置monitor服务。在我们的配置过程中，有时会出现，启动失败的情况，报错core - dumped，但在我们执行了这段代码后，启动正常，*不过不排除启动需要时间，而我们在没有启动的时候就查看状态了*
 ```bash
 rmmod erdma
 odprobe erdma compat_mode=1
 ```
+```bash
+mkdir -p /opt/3fs/{bin,etc}
+mkdir -p /var/log/3fs
+cp ~/3fs/build/bin/monitor_collector_main /opt/3fs/bin
+cp ~/3fs/configs/monitor_collector_main.toml /opt/3fs/etc
+#创建一个运行位置
 
+vim /opt/3fs/etc/monitor_collector_main.toml
+#下面是修改内容
+[server.monitor_collector.reporter.clickhouse]
+db = '3fs'
+host = '127.0.0.1'
+passwd = 'eRDMA123!!'
+port = '9000'
+user = 'default'
+
+cp ~/3fs/deploy/systemd/monitor_collector_main.service /usr/lib/systemd/system
+#cpy进system空间
+systemctl start monitor_collector_main
+systemctl status monitor_collector_main 
+#check
+```
 7. 配置Admin Client 服务
     这里需要添加一下关于rsync的说明，通常需要使用ssh进行连接，也就是说需要**第一22端口的开放，第二密钥中的公钥传递到~/.ssh/authorizedkeys中**。但是阿里云申请的ecs实例在ssh权限方面有问题，导致ssh相关操作会失败,经过比对，authorized_keys 中只有阿里云上自建的密钥对信息。这是源自sshd.config的问题，阿里云会将config中的大部分注释掉，需要手动进行改动设置，比如如下的比较重要的几个设置，其中最下面的图片中改为yes，可以使用ssh-copy-id 自动传递公钥，如果不改，需要手动将公钥写入authorized_keys 中。[参考](https://blog.csdn.net/yxyc666/article/details/142331896)
 
@@ -130,31 +158,26 @@ ssh-copy-id root@$(ip_address)#meta节点的ip地址
 #rsync .......
 ```
 
+        
 8. 配置mgmtd服务
-        
-        ```Bash
-        cp ~/3fs/deploy/systemd/mgmtd_main.service /usr/lib/systemd/system
-        ##cp 命令 做了对于system空间的更改，需要以下命令进行重载
-        systemctl daemon-reload
-        ## 
-        如果未有warning提醒，并且没有使用上面的命令
-        可能会出现fail
-        ##
-        反之，如果出现warning并且按照这样更改，那么就会成功
-        ```
-        事实上这只是一方面，另一方面是，阿里云的erdma需要每次都重新配置，需要
-        
-        ```Bash
-        # 卸载
-        rmmod erdma
-        #重装 
-        modprobe erdma compat_mode=1
-        ```
-    
+```bash
+cp ~/3fs/deploy/systemd/mgmtd_main.service /usr/lib/systemd/system
+#cp 命令 做了对于system空间的更改，需要以下命令进行重载
+systemctl daemon-reload
+#如果未有warning提醒，并且没有使用上面的命令可能会出现fail
+#反之，如果出现warning并且按照这样更改，那么就会成功
+```
+事实上这只是一方面，另一方面是，阿里云的erdma需要每次都重新配置，需要
+```bash
+# 卸载
+rmmod erdma
+#重装 
+modprobe erdma compat_mode=1
+```
 9. 配置meta service
-    
+
 10. 配置3FS
-		具体见参考链接
+	具体见参考链接
 	1. 这里需要根据自己的ecs配置进行设置，以我们的存储是申请了3个节点，每个节点一个SSD盘（超级丐版），这里的num-nodes需要按照这样更改。
 	2. 以下的两段代码是在分配物理存储的映射关系，与3fs使用的CR和CRAQ有关，target是最小的单元，
 11. example
