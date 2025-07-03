@@ -63,7 +63,7 @@ cmake --build build -j
 >Tips: 对于fuse client，可以搭载在meta node 上，用以进行简易测试，也可以在外部独立节点搭建，用以模拟高并发环境下的情况
 
 ## 2.1 搭建meta节点
-1. 将eRDMA模式改为1 ^4289c0
+1. 将eRDMA模式改为1 
 ```Bash
 rmmod erdma
 odprobe erdma compat_mode=1
@@ -254,7 +254,7 @@ systemctl status meta_main
 ```
 
 ## 2.2 配置storage节点
-1. rmmod等代码（同[[#^4289c0|从这里开始的若干步一直到clickhouse]]）
+1. rmmod等代码（同从2.1开始的若干步一直到clickhouse）
 2. 配置admin client，这里可能会出现/var/log/3fs 未找到的问题，直接mkdir -p 即可
 3. 根据自己的节点数，盘数调整，来配置storage service
 ```bash
