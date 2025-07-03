@@ -1,5 +1,4 @@
-
-首先十分感谢以上两篇还有更多网络上的资料，在配置过程中，我在其中受益良多，因此，本人根据此文章和3fs github网站上的setup guide，大致总结了在阿里云ecs上搭建一个demo的流程和一些注意事项
+根据末尾链接文章和3fs github网站上的setup guide，大致总结了在阿里云ecs上搭建一个demo的流程和一些注意事项
 # 1.创建实例并且生成基础镜像
 
 首先需要创建编译实例用来构建3fs基础环境，此后的具体节点配置搭建在此编译环境所构成的基础上。
@@ -129,7 +128,7 @@ cp ~/3fs/deploy/systemd/monitor_collector_main.service /usr/lib/systemd/system
 #cpy进system空间
 systemctl start monitor_collector_main
 systemctl status monitor_collector_main 
-#check
+#start and check
 ```
 7. 配置Admin Client 服务
     这里需要添加一下关于rsync的说明，通常需要使用ssh进行连接，也就是说需要**第一22端口的开放，第二密钥中的公钥传递到~/.ssh/authorizedkeys中**。但是阿里云申请的ecs实例在ssh权限方面有问题，导致ssh相关操作会失败,经过比对，authorized_keys 中只有阿里云上自建的密钥对信息。这是源自sshd.config的问题，阿里云会将config中的大部分注释掉，需要手动进行改动设置，比如如下的比较重要的几个设置，其中最下面的图片中改为yes，可以使用ssh-copy-id 自动传递公钥，如果不改，需要手动将公钥写入authorized_keys 中。[参考](https://blog.csdn.net/yxyc666/article/details/142331896)
@@ -157,9 +156,24 @@ ssh-copy-id root@$(ip_address)#meta节点的ip地址
 
 #rsync .......
 ```
+tips：之后使用rsync meta：也可以写成 rsync root@meta： 或者是 rsync root@（实际ip地址）
+参考起见，这是我使用参考文章里面命令的例子
+```bash
+mkdir -p /opt/3fs/{bin,etc}
+rsync -avz meta:~/3fs/build/bin/admin_cli /opt/3fs/bin
+rsync -avz meta:~/3fs/configs/admin_cli.toml /opt/3fs/etc
+rsync -avz meta:/etc/foundationdb/fdb.cluster /opt/3fs/etc
+#这里用到rsync，可以在多台主机之间互通，方便通讯
 
-        
-8. 配置mgmtd服务
+vim /opt/3fs/etc/admin_cli.toml
+
+#修改内容如下
+cluster_id = "stage"
+ 
+[fdb]
+clusterFile = '/opt/3fs/etc/fdb.cluster'
+```
+8. 配置mgmtd服务，我们会出现配置失败的情况，有以下两种我们尝试过的方法，~~后者好像更有效一点~~
 ```bash
 cp ~/3fs/deploy/systemd/mgmtd_main.service /usr/lib/systemd/system
 #cp 命令 做了对于system空间的更改，需要以下命令进行重载
@@ -174,18 +188,133 @@ rmmod erdma
 #重装 
 modprobe erdma compat_mode=1
 ```
-9. 配置meta service
+参考流程如下：
+```bash
+cp ~/3fs/build/bin/mgmtd_main /opt/3fs/bin
+cp ~/3fs/configs/{mgmtd_main.toml,mgmtd_main_launcher.toml,mgmtd_main_app.toml} /opt/3fs/etc
 
-10. 配置3FS
-	具体见参考链接
-	1. 这里需要根据自己的ecs配置进行设置，以我们的存储是申请了3个节点，每个节点一个SSD盘（超级丐版），这里的num-nodes需要按照这样更改。
-	2. 以下的两段代码是在分配物理存储的映射关系，与3fs使用的CR和CRAQ有关，target是最小的单元，
-11. example
+vim /opt/3fs/etc/mgmtd_main_app.toml
+##修改
+node_id = 1
+
+vim /opt/3fs/etc/mgmtd_main_launcher.toml
+##修改
+cluster_id = "stage"
+ 
+[fdb]
+clusterFile = '/opt/3fs/etc/fdb.cluster'
+
+vim /opt/3fs/etc/mgmtd_main.toml
+##修改
+[common.monitor.reporters.monitor_collector]
+remote_ip = "10.99.0.1:10000"#这里填入meta节点机器的ip地址
+
+
+/opt/3fs/bin/admin_cli -cfg /opt/3fs/etc/admin_cli.toml "init-cluster --mgmtd /opt/3fs/etc/mgmtd_main.toml 1 1048576 16"
+ #初始化集群
+
+cp ~/3fs/deploy/systemd/mgmtd_main.service /usr/lib/systemd/system
+systemctl start mgmtd_main
+systemctl status mgmtd_main
+#start and check
+```
+9. 配置meta service
+```bash
+cp ~/3fs/build/bin/meta_main /opt/3fs/bin
+cp ~/3fs/configs/{meta_main_launcher.toml,meta_main.toml,meta_main_app.toml} /opt/3fs/etc
+
+vim /opt/3fs/etc/meta_main_app.toml
+##修改
+node_id = 100
+
+vim /opt/3fs/etc/meta_main_launcher.toml
+##修改
+cluster_id = "stage"
+ 
+[mgmtd_client]
+mgmtd_server_addresses = ["RDMA://10.99.0.1:8000"]#这里填入meta节点机器的ip地址
+
+vim /opt/3fs/etc/mgmtd_main.toml
+##修改
+[server.mgmtd_client]
+mgmtd_server_addresses = ["RDMA://10.99.0.1:8000"]
+
+[common.monitor.reporters.monitor_collector]
+remote_ip = "10.99.0.1:10000"#这里填入meta节点机器的ip地址
+
+[server.fdb]
+clusterFile = '/opt/3fs/etc/fdb.cluster'
+
+/opt/3fs/bin/admin_cli -cfg /opt/3fs/etc/admin_cli.toml --config.mgmtd_client.mgmtd_server_addresses '["RDMA://10.99.0.1:8000"]' "set-config --type META --file /opt/3fs/etc/meta_main.toml"
+
+cp ~/3fs/deploy/systemd/meta_main.service /usr/lib/systemd/system
+systemctl start meta_main
+systemctl status meta_main
+#start and check
+```
+
+## 2.2 配置storage节点
+1. rmmod等代码（同[[#^4289c0|从这里开始的若干步一直到clickhouse]]）
+2. 配置admin client，这里可能会出现/var/log/3fs 未找到的问题，直接mkdir -p 即可
+3. 根据自己的节点数，盘数调整，来配置storage service
+```bash
+mkdir -p /storage/data{0..7}
+mkdir -p /var/log/3fs
+for i in {0..7};do mkfs.xfs -L data${i} /dev/nvme${i}n1;mount -o noatime,nodiratime -L data${i} /storage/data${i};done
+mkdir -p /storage/data{0..7}/3fs
+#根据SSD数量调整
+sysctl -w fs.aio-max-nr=67108864
+```
+紧接着参考文章的步骤是改动meta节点中的原始配置文件，这一步我认为是为了简化配置过程，因为每个storage节点的配置需求相同，因此先将配置文件写到meta中，再通过rsync复制，那么配置多个节点的时候只需要rsync即可。具体见下
+```bash
+#在meta中进行修改，后续只需要进行rsync即可
+vim ~/3fs/configs/storage_main_launcher.toml
+#修改内容
+cluster_id = "stage"
+ 
+[mgmtd_client]
+mgmtd_server_addresses = ["RDMA://10.99.0.1:8000"]#adjust
+
+vim ~/3fs/configs/storage_main.toml
+#修改内容
+[server.mgmtd]
+mgmtd_server_address = ["RDMA://10.99.0.1:8000"]
+ 
+[common.monitor.reporters.monitor_collector]
+remote_ip = "10.99.0.1:10000"
+ 
+[server.targets]
+target_paths = ["/storage/data0/3fs","/storage/data1/3fs","/storage/data2/3fs","/storage/data3/3fs","/storage/data4/3fs","/storage/data5/3fs","/storage/data6/3fs","/storage/data7/3fs"]#根据盘数调整
+
+#之后每个storage节点进行
+rsync -avz meta:~/3fs/build/bin/storage_main /opt/3fs/bin
+rsync -avz meta:~/3fs/configs/{storage_main_launcher.toml,storage_main.toml,storage_main_app.toml} /opt/3fs/etc
+
+vim /opt/3fs/etc/storage_main_app.toml
+#修改对应的node-id
+
+/opt/3fs/bin/admin_cli -cfg /opt/3fs/etc/admin_cli.toml --config.mgmtd_client.mgmtd_server_addresses '["RDMA://10.99.0.1:8000"]' "set-config --type STORAGE --file /opt/3fs/etc/storage_main.toml"
+
+rsync -avz meta:~/3fs/deploy/systemd/storage_main.service /usr/lib/systemd/system
+systemctl start storage_main
+systemctl status storage_main
+#start and check
+```
+## 2.3 配置meta节点之配置3FS
+ 参考流程
+ ```bash
+ /opt/3fs/bin/admin_cli -cfg /opt/3fs/etc/admin_cli.toml --config.mgmtd_client.mgmtd_server_addresses '["RDMA://10.99.0.1:8000"]' "user-add --root --admin 0 root"
+
+#将输出信息中的token（不包含括号内的内容）加入/opt/3fs/etc/token.txt保存
+pip3 install -r ~/3fs/deploy/data_placement/requirements.txt
+#安装依赖
+
+ ```
+具体见参考链接。这里需要根据自己的ecs配置进行设置，以我们的存储是申请了3个节点，每个节点一个SSD盘（超级丐版），这里的num-nodes需要按照这样更改。以下的两段代码是在分配物理存储的映射关系，与3fs使用的CR和CRAQ有关，target是最小的单元。
 ```bash
 python3 ~/3fs/deploy/data_placement/src/model/data_placement.py \
   -ql -relax -type CR --num_nodes 3 --replication_factor 3 --min_targets_per_disk 1
 ```
-
 ```bash
  python3 ~/3fs/deploy/data_placement/src/setup/gen_chain_table.py \
    --chain_table_type CR --node_id_begin 10001 --node_id_end 10003 \ 
@@ -194,26 +323,26 @@ python3 ~/3fs/deploy/data_placement/src/model/data_placement.py \
    --incidence_matrix_path output/DataPlacementModel-v_3-b_1-r_1-k_3-λ_1-lb_1-ub_0/incidence_matrix.pickle
 ```
 
-
-
-
 以上均运行在/opt/3fs/下，或者说output会产生在当前目录下，只要能在后面的命令中找到就可以
 
 出现未知错误，可能由于admin client功能莫名奇妙失去挂载（可能由于服务器停机）。也可能是因为storage 节点断开链接或者未成功链接导致target（到物理SSD的映射）（必须要保证已经建立的节点数和node id begin 到 node id end 相匹配） 
 
-## 2.2 配置storage节点
-1. rmmod等代码（同[[#^4289c0|从这里开始的若干步一直到clickhouse]]）
-2. 配置admin client，这里可能会出现/var/log/3fs 未找到的问题，直接mkdir -p 即可
-3. 根据自己的节点数，盘数调整，来配置storage service
+另一个问题是如何选择命令的参数，这里我们使用的是每个存储节点1 $\cdot$ 3GIB 的配置,(教程中是每个节点8$\cdot$ 3GIB)，这里会有一个target_per_disk 的参数，我们选择除了1以外的数都会报错：parameter infeasible，*因此**可能** 需要将这个参数设置为小于等于每个节点的盘数*
 
-## 2.3 配置3FS
-1. 按照教程流程即可，这里运行python3的目录最好是/opt/3fs/ 检查输出是的output文件夹应该在这之下
-2. 另一个问题是如何选择命令的参数，这里我们使用的是每个存储节点1 $\cdot$ 3GIB 的配置,(教程中是每个节点8$\cdot$ 3GIB)，这里会有一个target_per_disk 的参数，我们选择除了1以外的数都会报错：parameter infeasible，*因此**可能** 需要将这个参数设置为小于等于每个节点的盘数*
-3. 在这一步之后，主体分布式结构就已经搭建好了
+之后的流程：
+```bash
+/opt/3fs/bin/admin_cli --cfg /opt/3fs/etc/admin_cli.toml --config.mgmtd_client.mgmtd_server_addresses '["RDMA://10.99.0.1:8000"]' --config.user_info.token $(<"/opt/3fs/etc/token.txt") < output/create_target_cmd.txt
+#这一步出错可能需要检查storage节点是否失联，因为这一步是将逻辑映射到物理的步骤，需要storage
+/opt/3fs/bin/admin_cli --cfg /opt/3fs/etc/admin_cli.toml --config.mgmtd_client.mgmtd_server_addresses '["RDMA://10.99.0.1:8000"]' --config.user_info.token $(<"/opt/3fs/etc/token.txt") "upload-chains output/generated_chains.csv"
+ 
+/opt/3fs/bin/admin_cli --cfg /opt/3fs/etc/admin_cli.toml --config.mgmtd_client.mgmtd_server_addresses '["RDMA://10.99.0.1:8000"]' --config.user_info.token $(<"/opt/3fs/etc/token.txt") "upload-chain-table --desc stage 1 output/generated_chain_table.csv"
+ 
+```
+在这一步之后，主体分布式结构就已经搭建好了
 
 ## 2.4 配置FUSE Client
-按照教程配置即可。我们在配置过程中阴差阳错将fuse没有配置到独立节点而是配置到了meta节点上，但最后也运行成功了。经过查资料，这样多个功能放在同一节点的方式可以用于小规模简易测试，而全部分散到多个独立节点可以更加贴近生产环境。
+按照参考配置即可。我们在配置过程中阴差阳错将fuse没有配置到独立节点而是配置到了meta节点上，但最后也运行成功了。经过查资料，这样多个功能放在同一节点的方式可以用于小规模简易测试，而全部分散到多个独立节点可以更加贴近生产环境。
 
-
+最后：十分感谢末尾的两篇资料还有更多网络上的资料，在配置过程中，我在其中受益良多，因此，推荐配合参考文章进行具体的实践。
 reference1：[基于eRDMA实测DeepSeek开源的3FS_3fs编译-CSDN博客](https://blog.csdn.net/weixin_43778179/article/details/145995349)
 reference2：[DeepSeek 3FS部署最佳实践_3fs 部署-CSDN博客](https://blog.csdn.net/Franklin7B/article/details/146308170)
