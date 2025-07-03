@@ -10,14 +10,29 @@
 
 ##  1.1构建细节
 1. 构建基础环境，具体的shell命令参考3fs github官网
+```bash
+apt install cmake libuv1-dev liblz4-dev liblzma-dev libdouble-conversion-dev libprocps-dev libdwarf-dev libunwind-dev \
+  libaio-dev libgflags-dev libgoogle-glog-dev libgtest-dev libgmock-dev clang-format-14 clang-14 clang-tidy-14 lld-14 \
+  libgoogle-perftools-dev google-perftools libssl-dev ccache gcc-12 g++-12 libboost-all-dev
+```
 
 2. 下载fuse，注意这一步可能会比较慢，稍加等待即可
+```bash
+wget https://github.com/libfuse/libfuse/releases/download/fuse-3.16.1/fuse-3.16.1.tar.gz
+tar vzxf fuse-3.16.1.tar.gz
+cd fuse-3.16.1/
+mkdir build; cd build
+apt install meson
+meson setup ..
+ninja ; ninja install
+```
 
 3. 下载rust支持。这一步与我们在自己电脑环境上下载rust基本相同，参考流程如下
 ```bash
 	export RUSTUP_DIST_SERVER=https://mirrors.ustc.edu.cn/rust-static 
 	export RUSTUP_UPDATE_ROOT=https://mirrors.ustc.edu.cn/rust-static/rustup
 	#然后使用官网上的下载curl指令
+	curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 	source $HOME/.cargo/env
 	#source之后重启shell使设置成立
 ```
@@ -71,8 +86,18 @@ chmod +x /usr/sbin/ibdev2netdev
 4. 将meta对应的ip填入每个节点的/etc/hosts，这一步用在以后的rsync操作中，用来简化meta节点的ip地址的填写，但在我们实际配置中，使用这个的操作可以用root@（实际IP地址），并且有关于ip的操作中，更加麻烦的是更改各种config中的ip地址以及端口
 
 5. 安装clickhouse
-
-6. 配置monitor服务在我们的配置过程中，有时会出现，启动失败的情况，报错core - dumped，但在我们执行了这段代码后，启动正常，*不过不排除启动需要时间，而我们在没有启动的时候就查看状态了*
+```bash
+sudo apt-get install -y apt-transport-https ca-certificates curl gnupg
+curl -fsSL 'https://packages.clickhouse.com/rpm/lts/repodata/repomd.xml.key' | sudo gpg --dearmor -o /usr/share/keyrings/clickhouse-keyring.gpg
+ 
+ARCH=$(dpkg --print-architecture)
+echo "deb [signed-by=/usr/share/keyrings/clickhouse-keyring.gpg arch=${ARCH}] https://packages.clickhouse.com/deb stable main" | sudo tee /etc/apt/sources.list.d/clickhouse.list
+sudo apt-get update
+ 
+sudo apt-get install -y clickhouse-server clickhouse-client
+#在安装的时候会要求输入密码, 任意指定即可
+```
+4. 配置monitor服务在我们的配置过程中，有时会出现，启动失败的情况，报错core - dumped，但在我们执行了这段代码后，启动正常，*不过不排除启动需要时间，而我们在没有启动的时候就查看状态了*
 ```bash
 rmmod erdma
 odprobe erdma compat_mode=1
